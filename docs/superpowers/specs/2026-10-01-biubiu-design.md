@@ -88,23 +88,26 @@ struct ActivityItem: Identifiable, Hashable {
 ### 3.2 ActivitySource 协议
 
 ```swift
-protocol ActivitySource: Sendable {
-    /// 持续推送这个数据源当前的完整结果集
-    func items() -> AsyncStream<[ActivityItem]>
+@MainActor
+protocol ActivitySource: AnyObject {
+    var id: String { get }
+    /// 开始监听；每次回调都给出这个数据源当前的完整结果集
+    func start(since: Date, onUpdate: @escaping @MainActor ([ActivityItem]) -> Void)
+    func stop()
 }
 ```
 
-`ActivityStore` 订阅所有数据源；任一数据源推送新结果，就重新计算一次合并后的列表。
+`AppDelegate` 启动所有数据源，把回调结果交给 `ActivityStore.update(sourceID:items:)`；任一数据源推送新结果，就重新计算一次合并后的列表。Spotlight 查询的起始时间在启动时固定，所以距上次启动超过 1 小时、再次打开面板时，重启所有数据源，让时间范围向前移动。（用回调而不是 `AsyncStream`：Spotlight 和系统通知本来就在主线程回调，测试也可以同步进行。）
 
 ### 3.3 模块职责
 
-- **SpotlightFileSource**：在主目录范围内持续查询（`NSMetadataQueryUserHomeScope`）。查询条件见 4.2。把 Spotlight 返回的结果转换成 `ActivityItem`。
+- **SpotlightFileSource**：在主目录范围内持续查询（`NSMetadataQueryUserHomeScope`）。查询条件见 4.2。把 Spotlight 返回的结果转换成 `ActivityItem`。`~/Applications` 里的 app 跳过不报，交给 AppInstallSource，否则同一个 app 会以"文件 · 新增"的形式出现。
 - **AppInstallSource**：在 `/Applications` 和 `~/Applications` 中查询内容类型为 `com.apple.application-bundle`，并且"加入文件夹"时间（`kMDItemDateAdded`）落在时间范围内的项目。
 - **VolumeSource**：启动时读取当前已挂载的卷，之后监听系统的挂载和推出通知。只保留可移除、可推出或网络类型的卷。挂载时间只在运行期间收到通知时记录；启动前已经接上的卷，`date` 为 nil。负责执行推出操作。
-- **ActivityStore**（`@MainActor` 的普通类，数据变化时调用 `onChange` 回调通知界面刷新）：合并各数据源结果；同一 URL 只保留 `date` 最新的一条；套用 `IgnoreRules`；按日期倒序排列，最多保留 500 条；根据搜索词和当前分类筛选；按时间分组。时钟可注入。
+- **ActivityStore**（`@MainActor` 的普通类，数据变化时调用 `onChange` 回调通知界面刷新）：合并各数据源结果；同一 URL 只保留 `date` 最新的一条；套用 `IgnoreRules`；按日期倒序排列（不截断）；根据时间范围、搜索词和当前分类筛选，筛选结果最多显示 500 条（先筛选再截断，保证"下载"等分类不会被其他分类的大量条目挤掉）；按时间分组。时钟可注入。
 - **IgnoreRules**：规则分三种：路径前缀、路径中包含的片段、扩展名。另有一个"忽略隐藏文件"开关。提供默认规则（见 4.3）和"恢复默认"。保存在 `UserDefaults` 中。
 - **PinStore**：保存置顶项目的有序列表，每项记录普通书签数据（bookmark，文件移动或改名后仍能找到）和置顶时间。存在 `~/Library/Application Support/BiuBiu/pins.json`。
-- **AppSettings**：时间范围、各分类是否显示、上次选中的分类、是否开机启动（通过 `SMAppService.mainApp`）、是否已看过欢迎页。全局快捷键（键码 + 修饰键）也保存在这里。
+- **AppSettings**：时间范围、各分类是否显示、上次选中的分类、是否已看过欢迎页、置顶区是否折叠。是否开机启动不单独保存，直接读写 `SMAppService.mainApp` 的状态。全局快捷键（键码 + 修饰键）也保存在这里。
 - **PanelController**：管理一个 `NSPanel`，样式为 `.nonactivatingPanel`，窗口层级为浮动窗口，集合行为设为 `.canJoinAllSpaces` + `.fullScreenAuxiliary`，内容全部用 AppKit 实现（列表用 `NSTableView`）。负责计算面板位置、显示和隐藏，以及点击面板外部时自动关闭。
 - **StatusItemController**：管理菜单栏图标。左键点击切换面板显示；右键弹出菜单（设置、退出）。
 
@@ -112,7 +115,7 @@ protocol ActivitySource: Sendable {
 
 ### 4.1 时间范围
 
-默认 7 天，可选 1、3、7、14、30 天。
+默认 7 天，可选 1、3、7、14、30 天。每个分类最多显示 500 条。
 
 ### 4.2 文件与文件夹的判定
 
@@ -127,7 +130,7 @@ kMDItemLastUsedDate >= since
 每个结果的活动类型和时间按以下规则判定：
 
 1. 取 最近打开时间（LastUsed）、内容修改时间（ContentModification）、加入文件夹时间（DateAdded）三者中最新的一个作为 `date`。
-2. 最新的是 LastUsed，判为 `opened`；是 ContentModification，判为 `saved`；是 DateAdded，判为 `added`。
+2. 最新的是 LastUsed，判为 `opened`；是 ContentModification，判为 `saved`；是 DateAdded，判为 `added`。与最新时间相差 2 秒以内的视为并列，并列时优先级为 `added` > `saved` > `opened`。原因：浏览器下载完成后，修改时间往往比加入时间晚几毫秒，不这样处理就会把下载误判成"保存"。
 3. 如果判为 `added`，并且文件带有下载来源记录（`kMDItemWhereFroms` 非空）或位于 `~/Downloads` 下，则改判为 `downloaded`。`sourceHost` 取下载来源记录中第一个网址的域名。
 4. **文件夹**（内容类型为 `public.folder`）只看 LastUsed 和 DateAdded，忽略内容修改时间，对应 `opened` 或 `added`；两者都不在时间范围内的文件夹直接丢弃。原因是文件夹里任何文件变动都会刷新它的修改时间，会导致刷屏。
 
@@ -135,9 +138,9 @@ kMDItemLastUsedDate >= since
 
 ### 4.3 默认忽略规则
 
-- 隐藏文件和文件夹（路径中任何一段以 `.` 开头）
+- 隐藏文件和文件夹（路径中任何一段以 `.` 开头），以及 Finder 的自定义图标文件 `Icon\r`
 - 路径前缀：`~/Library/`、`~/.Trash/`
-- 路径中包含：`.app/`（程序包内部）、`/node_modules/`、`/.git/`、`/DerivedData/`、`/__pycache__/`
+- 路径中包含：`.app/`（程序包内部）、`/node_modules/`、`/.git/`、`/DerivedData/`、`/__pycache__/`、`.photoslibrary`、`.musiclibrary`、`.tvlibrary`（照片、音乐、视频资料库及其内部文件；在本机实测中它们是主要噪音来源）
 - 扩展名：`tmp`、`part`、`crdownload`、`download`、`swp`
 
 在面板中右键某个条目，可以选择：忽略此文件（路径前缀规则）、忽略此文件夹下所有项目（以父文件夹为路径前缀）、忽略所有同扩展名的文件（扩展名规则）。
@@ -179,8 +182,8 @@ kMDItemLastUsedDate >= since
 |---|---|---|
 | 打开（面板随后关闭） | 单击 | `↩` |
 | 在 Finder 中显示 | 右键菜单 | `⌘↩` |
-| 快速预览 | 右键菜单 | `空格` |
-| 拖到其他 app | 拖出 | — |
+| 快速预览 | 右键菜单 | `空格`（仅在搜索框为空时；否则空格照常输入）或 `⌘Y` |
+| 拖到其他 app | 拖出（以"拷贝"方式，不会移动原文件） | — |
 | 复制路径 | 右键菜单 | `⌥⌘C` |
 | 置顶 / 取消置顶 | 右键菜单 | `⌘P` |
 | 用指定 app 打开 | 右键 → 打开方式 ▸ | — |
@@ -231,7 +234,7 @@ kMDItemLastUsedDate >= since
 
 - `IgnoreRules`：各规则类型的匹配、隐藏文件开关、默认规则、恢复默认。
 - 活动类型判定：用假的元数据组合覆盖 4.2 的每条规则，包括文件夹忽略修改时间、下载判定、`sourceHost` 解析。
-- `ActivityStore`：多数据源合并、同 URL 去重取最新、套用忽略规则、排序、500 条上限、搜索筛选、分类筛选、时间分组（注入固定时钟，覆盖跨天边界）。
+- `ActivityStore`：多数据源合并、同 URL 去重取最新、套用忽略规则、排序、500 条显示上限（不影响其他分类）、搜索筛选、分类筛选、时间分组（注入固定时钟，覆盖跨天边界）。
 - `PinStore`：保存和读取、排序、文件损坏时的备份与重置。
 - 快捷键模型：序列化与反序列化、显示文字（如 `⌥⌘R`）、拒绝不含修饰键的组合。
 - 数据源都放在协议后面，测试中用假数据源，不依赖真实的 Spotlight。
