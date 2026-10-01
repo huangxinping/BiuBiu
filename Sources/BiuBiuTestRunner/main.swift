@@ -5,6 +5,7 @@ let allTests: [TestCase] =
     + IgnoreRulesTests.tests
     + ActivityClassifierTests.tests
     + TimeGroupingTests.tests
+    + ActivityStoreTests.tests
 
 let failed = TestKit.run(allTests, filter: CommandLine.arguments.dropFirst().first)
 exit(failed == 0 ? 0 : 1)
