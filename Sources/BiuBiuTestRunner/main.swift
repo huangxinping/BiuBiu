@@ -9,6 +9,7 @@ let allTests: [TestCase] =
     + PinStoreTests.tests
     + SettingsAndHotKeyTests.tests
     + PanelTests.tests
+    + SourcesTests.tests
 
 let failed = TestKit.run(allTests, filter: CommandLine.arguments.dropFirst().first)
 exit(failed == 0 ? 0 : 1)
