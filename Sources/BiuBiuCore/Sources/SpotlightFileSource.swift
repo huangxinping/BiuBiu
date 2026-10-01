@@ -11,8 +11,8 @@ package final class SpotlightFileSource: ActivitySource {
 
     /// Everything `item(from:since:downloadsPath:)` and the app check read, collected by the query.
     private static let attributes = [
-        NSMetadataItemContentTypeKey, NSMetadataItemLastUsedDateKey, NSMetadataItemContentModificationDateKey,
-        NSMetadataItemDateAddedKey, NSMetadataItemWhereFromsKey,
+        NSMetadataItemContentTypeKey, NSMetadataItemLastUsedDateKey, NSMetadataItemContentCreationDateKey,
+        NSMetadataItemContentModificationDateKey, NSMetadataItemDateAddedKey, NSMetadataItemWhereFromsKey,
     ]
 
     package init(homeDirectory: String = NSHomeDirectory()) {
@@ -60,6 +60,7 @@ package final class SpotlightFileSource: ActivitySource {
             path: record.path,
             isFolder: record.string(NSMetadataItemContentTypeKey) == "public.folder",
             lastUsed: record.date(NSMetadataItemLastUsedDateKey),
+            contentCreated: record.date(NSMetadataItemContentCreationDateKey),
             contentModified: record.date(NSMetadataItemContentModificationDateKey),
             dateAdded: record.date(NSMetadataItemDateAddedKey),
             whereFroms: record.strings(NSMetadataItemWhereFromsKey)

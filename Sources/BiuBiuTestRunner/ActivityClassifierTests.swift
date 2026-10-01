@@ -39,12 +39,30 @@ enum ActivityClassifierTests {
             expectEqual(item?.kind, .folder)
             expectEqual(item?.date, at(30))
         },
-        TestCase("Classifier: added with where-froms is a download with host") {
+        TestCase("Classifier: a browser download saved straight to another folder is a download with host") {
             let item = classify(FileMetadata(path: "/Users/me/Desktop/x.zip", isFolder: false,
-                                             contentModified: at(100), dateAdded: at(200),
+                                             contentCreated: at(200), contentModified: at(203), dateAdded: at(200),
                                              whereFroms: ["https://cdn.example.com/x.zip", "https://example.com/"]))
             expectEqual(item?.event, .downloaded)
+            expectEqual(item?.date, at(203))
             expectEqual(item?.sourceHost, "cdn.example.com")
+        },
+        TestCase("Classifier: a download moved out of Downloads is added, not downloaded") {
+            // Moving a file sets its date-added to the move; it was created 45 s earlier somewhere else.
+            let item = classify(FileMetadata(path: "/Users/me/Desktop/stats/chart.png", isFolder: false,
+                                             contentCreated: at(100), contentModified: at(100), dateAdded: at(145),
+                                             whereFroms: ["https://example.com/chart.png"]))
+            expectEqual(item?.event, .added)
+            expectEqual(item?.date, at(145))
+            expect(item?.sourceHost == nil)
+        },
+        TestCase("Classifier: a slow download in Downloads is a download, dated when it finished") {
+            // Browsers rename "x.crdownload" in place, which keeps date-added at the start of the download.
+            let item = classify(FileMetadata(path: "/Users/me/Downloads/big.zip", isFolder: false,
+                                             contentCreated: at(200), contentModified: at(440), dateAdded: at(200),
+                                             whereFroms: ["https://example.com/big.zip"]))
+            expectEqual(item?.event, .downloaded)
+            expectEqual(item?.date, at(440))
         },
         TestCase("Classifier: added inside Downloads is a download even without where-froms") {
             let item = classify(FileMetadata(path: "/Users/me/Downloads/x.zip", isFolder: false, dateAdded: at(200)))
@@ -61,9 +79,10 @@ enum ActivityClassifierTests {
             expectEqual(item?.event, .downloaded)
             expectEqual(item?.date, at(200.4))
         },
-        TestCase("Classifier: saving a downloaded file later is a save") {
+        TestCase("Classifier: saving a downloaded file hours later is a save") {
             let item = classify(FileMetadata(path: "/Users/me/Downloads/x.pdf", isFolder: false,
-                                             contentModified: at(900), dateAdded: at(200), whereFroms: ["https://a.com/x"]))
+                                             contentCreated: at(200), contentModified: at(200 + 7200), dateAdded: at(200),
+                                             whereFroms: ["https://a.com/x"]))
             expectEqual(item?.event, .saved)
             expect(item?.sourceHost == nil)
         },

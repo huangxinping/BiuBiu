@@ -131,7 +131,12 @@ kMDItemLastUsedDate >= since
 
 1. 取 最近打开时间（LastUsed）、内容修改时间（ContentModification）、加入文件夹时间（DateAdded）三者中最新的一个作为 `date`。
 2. 最新的是 LastUsed，判为 `opened`；是 ContentModification，判为 `saved`；是 DateAdded，判为 `added`。与最新时间相差 2 秒以内的视为并列，并列时优先级为 `added` > `saved` > `opened`。原因：浏览器下载完成后，修改时间往往比加入时间晚几毫秒，不这样处理就会把下载误判成"保存"。
-3. 如果判为 `added`，并且文件带有下载来源记录（`kMDItemWhereFroms` 非空）或位于 `~/Downloads` 下，则改判为 `downloaded`。`sourceHost` 取下载来源记录中第一个网址的域名。
+3. **下载**（2026-10-01 按用户验收反馈修订）：满足以下任一条件的文件，其"加入"事件记为 `downloaded`：
+   - 位于 `~/Downloads` 下（不论怎么到达的）；
+   - 带有下载来源记录（`kMDItemWhereFroms` 非空），并且就是在当前文件夹里生成的："创建时间"与"加入时间"相差不超过 2 秒（浏览器直接存到了别的文件夹）。
+
+   从别处**移入**当前文件夹的文件（加入时间明显晚于创建时间）不算下载，记为 `added`。原因：移动文件会把"加入时间"更新为移动的时刻，用户已经整理走的下载不应再出现在"下载"分类里。
+   下载的时间取"修改时间"（浏览器把 `x.crdownload` 原地改名，"加入时间"停留在下载开始的时刻，"修改时间"才是下载完成的时刻）；但如果修改发生在加入一小时以后，视为之后的编辑，记为 `saved`。`sourceHost` 取下载来源记录中第一个网址的域名。
 4. **文件夹**（内容类型为 `public.folder`）只看 LastUsed 和 DateAdded，忽略内容修改时间，对应 `opened` 或 `added`；两者都不在时间范围内的文件夹直接丢弃。原因是文件夹里任何文件变动都会刷新它的修改时间，会导致刷屏。
 
 界面上的标签文字：`opened` 显示"打开"、`saved` 显示"保存"、`added` 显示"新增"、`downloaded` 显示"下载"、`installed` 显示"安装/更新"（系统无法可靠区分安装和更新）、`mounted` 显示"已连接"。
