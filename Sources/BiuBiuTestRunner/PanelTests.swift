@@ -72,6 +72,24 @@ enum PanelTests {
             debouncer.panelDidHide(at: now)
             expect(debouncer.shouldReopen(at: now.addingTimeInterval(0.5)))
         },
+        TestCase("Subtitle: pinned items start with a pin mark in every category") {
+            let doc = ActivityItem(url: URL(fileURLWithPath: "/Users/me/Documents/a.txt"), kind: .file,
+                                   event: .saved, date: Date())
+            expectEqual(ItemSubtitle.compose(item: doc, isPinned: true, eventLabel: "Saved", relativeTime: "2 min ago"),
+                        "📌 Documents · Saved · 2 min ago")
+            expectEqual(ItemSubtitle.compose(item: doc, isPinned: false, eventLabel: "Saved", relativeTime: "2 min ago"),
+                        "Documents · Saved · 2 min ago")
+        },
+        TestCase("Subtitle: apps and disks skip the folder, undated disks skip the time") {
+            let app = ActivityItem(url: URL(fileURLWithPath: "/Applications/Figma.app"), kind: .application,
+                                   event: .installed, date: Date())
+            let disk = ActivityItem(url: URL(fileURLWithPath: "/Volumes/T7"), kind: .volume, event: .mounted,
+                                    date: nil, displayName: "T7", parentName: "")
+            expectEqual(ItemSubtitle.compose(item: app, isPinned: false, eventLabel: "Installed/Updated",
+                                             relativeTime: "3 hr ago"), "Installed/Updated · 3 hr ago")
+            expectEqual(ItemSubtitle.compose(item: disk, isPinned: false, eventLabel: "Connected", relativeTime: nil),
+                        "Connected")
+        },
         TestCase("Placement: hangs below the anchor, clamped inside the screen") {
             let visible = CGRect(x: 0, y: 0, width: 1440, height: 875)
             let size = CGSize(width: 360, height: 520)

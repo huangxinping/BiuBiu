@@ -382,7 +382,7 @@ extension PanelViewController: NSTableViewDataSource, NSTableViewDelegate {
         case .item(let item):
             let cell = reuse(ItemCellView.self)
             cell.configure(icon: ItemActions.icon(for: item.url), title: item.displayName,
-                           subtitle: Self.subtitle(for: item), dimmed: false,
+                           subtitle: subtitle(for: item), dimmed: false,
                            toolTip: item.sourceHost.map { String(format: L("Downloaded from %@"), $0) } ?? item.url.path,
                            accessory: item.kind == .volume
                                ? .init(symbol: "eject.fill", toolTip: L("Eject")) { [weak self] in self?.eject(item) }
@@ -396,14 +396,10 @@ extension PanelViewController: NSTableViewDataSource, NSTableViewDelegate {
         return url as NSURL
     }
 
-    static func subtitle(for item: ActivityItem) -> String {
-        var parts: [String] = []
-        if item.kind == .file || item.kind == .folder, let parent = item.parentName, !parent.isEmpty {
-            parts.append(parent)
-        }
-        parts.append(L(item.event.labelKey))
-        if let date = item.date { parts.append(RelativeTime.string(for: date)) }
-        return parts.joined(separator: " · ")
+    private func subtitle(for item: ActivityItem) -> String {
+        ItemSubtitle.compose(item: item, isPinned: deps.pinStore.isPinned(path: item.url.path),
+                             eventLabel: L(item.event.labelKey),
+                             relativeTime: item.date.map { RelativeTime.string(for: $0) })
     }
 
     private func reuse<T: NSTableCellView>(_ type: T.Type) -> T {
