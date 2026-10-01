@@ -15,6 +15,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItem: StatusItemController?
     private var panelController: PanelController?
     private var settingsWindow: SettingsWindowController?
+    private var welcomeWindow: WelcomeWindowController?
     private var sourcesStartedAt = Date.distantPast
     private var hotKeyWorking = true
 
@@ -43,6 +44,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         applyHotKey()
         startSources()
+        if !settings.hasSeenWelcome { showWelcome() }
     }
 
     // MARK: - Panel
@@ -126,5 +128,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             settingsWindow = SettingsWindowController(general: general, ignoreRules: ignore)
         }
         settingsWindow?.present()
+    }
+
+    private func showWelcome() {
+        settings.hasSeenWelcome = true
+        // Set from docs/superpowers/notes/2026-10-01-privacy-probe.md (Task 1).
+        welcomeWindow = WelcomeWindowController(shortcut: settings.hotKey?.displayString,
+                                                privacyNote: .expectPrompts) { [weak self] in
+            self?.welcomeWindow = nil
+        }
+        welcomeWindow?.present()
     }
 }
