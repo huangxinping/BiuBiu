@@ -1,0 +1,47 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Test
+        run: swift run BiuBiuTestRunner
+
+      - name: Import signing certificate
+        env:
+          SIGNING_P12_BASE64: ${{ secrets.SIGNING_P12_BASE64 }}
+          SIGNING_P12_PASSWORD: ${{ secrets.SIGNING_P12_PASSWORD }}
+        run: |
+          echo "$SIGNING_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          scripts/import-signing-cert.sh "$RUNNER_TEMP/signing.p12" "$SIGNING_P12_PASSWORD" "$RUNNER_TEMP/signing.keychain-db"
+          HASH=$(security find-identity -p codesigning "$RUNNER_TEMP/signing.keychain-db" | awk '/BiuBiu Self-Signed/ {print $2; exit}')
+          EXPECTED=$(tr -d '[:space:]' < Resources/signing-certificate-sha1.txt)
+          if [ "$HASH" != "$EXPECTED" ]; then
+            echo "Signing certificate $HASH does not match Resources/signing-certificate-sha1.txt ($EXPECTED)." >&2
+            echo "Releasing with a different certificate would reset users' privacy permissions." >&2
+            exit 1
+          fi
+          echo "SIGN_IDENTITY=$HASH" >> "$GITHUB_ENV"
+          echo "SIGN_KEYCHAIN=$RUNNER_TEMP/signing.keychain-db" >> "$GITHUB_ENV"
+
+      - name: Build app
+        run: VERSION="${GITHUB_REF_NAME#v}" scripts/build-app.sh
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          gh release create "$GITHUB_REF_NAME" "dist/BiuBiu-$VERSION.zip" \
+            --title "BiuBiu $VERSION" --generate-notes
