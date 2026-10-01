@@ -56,12 +56,16 @@ final class WelcomeWindowController: NSWindowController {
         for case let label as NSTextField in views where label.isEditable == false && label.cell?.wraps == true {
             label.widthAnchor.constraint(equalToConstant: 364).isActive = true
         }
+        // A leading-aligned stack does not count its right inset when fitting, so pin the width.
+        stack.widthAnchor.constraint(equalToConstant: 420).isActive = true
         window.contentView = stack
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
     func present() {
+        // Fit the text, which is shorter in some languages than in others.
+        if let window, let content = window.contentView { window.setContentSize(content.fittingSize) }
         window?.center()
         NSApp.activate()
         showWindow(nil)

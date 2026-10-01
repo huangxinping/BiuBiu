@@ -1,0 +1,97 @@
+/* Activity events */
+"Opened" = "打开";
+"Saved" = "保存";
+"Added" = "新增";
+"Downloaded" = "下载";
+"Installed/Updated" = "安装/更新";
+"Connected" = "已连接";
+
+/* Categories */
+"All" = "全部";
+"Files" = "文件";
+"Folders" = "文件夹";
+"Downloads" = "下载";
+"Apps" = "应用";
+"Disks" = "磁盘";
+
+/* Time groups */
+"Just Now" = "刚刚";
+"Today" = "今天";
+"Yesterday" = "昨天";
+"This Week" = "本周";
+"Earlier" = "更早";
+"now" = "刚刚";
+
+/* Panel */
+"Search recent items" = "搜索最近项目";
+"Pinned" = "置顶";
+"Not Found" = "找不到";
+"Remove from Pinned" = "从置顶中移除";
+"Downloaded from %@" = "下载自 %@";
+"Eject" = "推出";
+"Path copied" = "已复制路径";
+"“%@” no longer exists" = "“%@”已不存在";
+"Can’t find “%@”" = "找不到“%@”";
+"Couldn’t eject “%@”: %@" = "无法推出“%1$@”：%2$@";
+"Spotlight found nothing in your home folder. It may be excluded from indexing — check System Settings › Spotlight." = "Spotlight 在主文件夹中没有找到任何内容，主文件夹可能被排除在索引之外。请检查“系统设置 › Spotlight”。";
+"No matches" = "没有匹配的项目";
+"Loading…" = "正在加载…";
+"Nothing recent yet" = "暂无最近项目";
+"%@ to open" = "按 %@ 打开";
+
+/* Context menu */
+"Open" = "打开";
+"Open With" = "打开方式";
+"Show in Finder" = "在 Finder 中显示";
+"Quick Look" = "快速查看";
+"Copy Path" = "复制路径";
+"Pin" = "置顶";
+"Unpin" = "取消置顶";
+"Ignore" = "忽略";
+"This File" = "此文件";
+"This Folder" = "此文件夹";
+"Everything in “%@”" = "“%@”中的所有项目";
+"All .%@ Files" = "所有 .%@ 文件";
+
+/* Status item */
+"Settings…" = "设置…";
+"Quit BiuBiu" = "退出 BiuBiu";
+
+/* Settings */
+"BiuBiu Settings" = "BiuBiu 设置";
+"General" = "通用";
+"Shortcut:" = "快捷键：";
+"Record Shortcut" = "录制快捷键";
+"Type shortcut…" = "请按下快捷键…";
+"This shortcut is unavailable. Choose another one." = "此快捷键不可用，请换一个。";
+"Startup:" = "启动：";
+"Open BiuBiu at login" = "登录时打开 BiuBiu";
+"Show items from the last:" = "显示最近：";
+"1 day" = "1 天";
+"%d days" = "%d 天";
+"Categories:" = "分类：";
+"Type" = "类型";
+"Value" = "内容";
+"Path and everything inside" = "路径及其内部所有项目";
+"Path contains" = "路径包含";
+"File extension" = "文件扩展名";
+"e.g. ~/Projects/old or tmp" = "例如 ~/Projects/old 或 tmp";
+"Add" = "添加";
+"Remove" = "移除";
+"Restore Defaults" = "恢复默认";
+"Ignore hidden files and folders" = "忽略隐藏的文件和文件夹";
+"About" = "关于";
+"Version %@" = "版本 %@";
+"Your recent files, folders, apps and drives, one shortcut away." = "最近的文件、文件夹、应用和磁盘，一键直达。";
+"GitHub" = "GitHub";
+"Check for Updates" = "检查更新";
+
+/* Welcome */
+"Welcome to BiuBiu" = "欢迎使用 BiuBiu";
+"BiuBiu lives in your menu bar and remembers the files you just opened, saved or downloaded." = "BiuBiu 常驻在菜单栏，帮你记住刚刚打开、保存或下载的文件。";
+"Press %@ anywhere — even in full-screen apps — to open it." = "在任何地方按 %@ 即可打开，全屏应用中也可以。";
+"Click the menu bar icon to open it." = "点击菜单栏图标即可打开。";
+"Get Started" = "开始使用";
+"macOS may ask whether BiuBiu can access your Desktop, Documents or Downloads folder. Click Allow so those files can appear in the list." = "macOS 可能会询问是否允许 BiuBiu 访问“桌面”“文稿”或“下载”文件夹。请点“允许”，这些文件夹里的文件才能出现在列表中。";
+"To list files from your Desktop, Documents and Downloads, BiuBiu needs Full Disk Access. Turn on BiuBiu in the list that opens." = "要列出“桌面”“文稿”和“下载”中的文件，BiuBiu 需要“完全磁盘访问权限”。请在打开的列表中开启 BiuBiu。";
+"Open Privacy Settings…" = "打开隐私设置…";
