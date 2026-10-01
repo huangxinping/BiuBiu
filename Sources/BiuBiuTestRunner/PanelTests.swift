@@ -56,6 +56,22 @@ enum PanelTests {
             expectEqual(PanelKeyMap.command(keyCode: 8, modifiers: [.command, .option], searchIsEmpty: true), .copyPath)
             expect(PanelKeyMap.command(keyCode: 8, modifiers: [.command], searchIsEmpty: true) == nil)
         },
+        TestCase("Toggle: a reopen right after the panel hid is the same click and is ignored") {
+            // Clicking the status item while the panel is open closes it on mouse-down (outside-click
+            // monitor), then the item's mouse-up action asks to toggle about 20–50 ms later.
+            var debouncer = PanelToggleDebouncer()
+            let hid = Date(timeIntervalSince1970: 1_000)
+            debouncer.panelDidHide(at: hid)
+            expect(!debouncer.shouldReopen(at: hid.addingTimeInterval(0.044)))
+            expect(!debouncer.shouldReopen(at: hid.addingTimeInterval(0.3)))
+        },
+        TestCase("Toggle: reopening is allowed when nothing hid the panel just before") {
+            var debouncer = PanelToggleDebouncer()
+            let now = Date(timeIntervalSince1970: 1_000)
+            expect(debouncer.shouldReopen(at: now))
+            debouncer.panelDidHide(at: now)
+            expect(debouncer.shouldReopen(at: now.addingTimeInterval(0.5)))
+        },
         TestCase("Placement: hangs below the anchor, clamped inside the screen") {
             let visible = CGRect(x: 0, y: 0, width: 1440, height: 875)
             let size = CGSize(width: 360, height: 520)
