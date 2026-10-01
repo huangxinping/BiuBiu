@@ -9,6 +9,12 @@ package final class SpotlightFileSource: ActivitySource {
     private let downloadsPath: String
     private let userApplicationsPath: String
 
+    /// Everything `item(from:since:downloadsPath:)` and the app check read, collected by the query.
+    private static let attributes = [
+        NSMetadataItemContentTypeKey, NSMetadataItemLastUsedDateKey, NSMetadataItemContentModificationDateKey,
+        NSMetadataItemDateAddedKey, NSMetadataItemWhereFromsKey,
+    ]
+
     package init(homeDirectory: String = NSHomeDirectory()) {
         downloadsPath = homeDirectory + "/Downloads"
         userApplicationsPath = homeDirectory + "/Applications/"
@@ -26,14 +32,15 @@ package final class SpotlightFileSource: ActivitySource {
         runner.start(
             predicate: predicate,
             scopes: [NSMetadataQueryUserHomeScope],
-            onResults: { results in
-                onUpdate(results.compactMap { result in
-                    if Self.isLeftToAppSource(contentType: result.string(NSMetadataItemContentTypeKey),
-                                              path: result.string(NSMetadataItemPathKey),
+            attributes: Self.attributes,
+            onResults: { records in
+                onUpdate(records.compactMap { record in
+                    if Self.isLeftToAppSource(contentType: record.string(NSMetadataItemContentTypeKey),
+                                              path: record.path,
                                               userApplicationsPath: userApplicationsPath) {
                         return nil
                     }
-                    return Self.item(from: result, since: since, downloadsPath: downloadsPath)
+                    return Self.item(from: record, since: since, downloadsPath: downloadsPath)
                 })
             },
             onStatus: { [weak self] status in self?.onStatus?(status) }
@@ -48,15 +55,14 @@ package final class SpotlightFileSource: ActivitySource {
         contentType == "com.apple.application-bundle" && path?.hasPrefix(userApplicationsPath) == true
     }
 
-    private static func item(from result: NSMetadataItem, since: Date, downloadsPath: String) -> ActivityItem? {
-        guard let path = result.string(NSMetadataItemPathKey) else { return nil }
+    private static func item(from record: MetadataRecord, since: Date, downloadsPath: String) -> ActivityItem? {
         let metadata = FileMetadata(
-            path: path,
-            isFolder: result.string(NSMetadataItemContentTypeKey) == "public.folder",
-            lastUsed: result.date(NSMetadataItemLastUsedDateKey),
-            contentModified: result.date(NSMetadataItemContentModificationDateKey),
-            dateAdded: result.date(NSMetadataItemDateAddedKey),
-            whereFroms: result.strings(NSMetadataItemWhereFromsKey)
+            path: record.path,
+            isFolder: record.string(NSMetadataItemContentTypeKey) == "public.folder",
+            lastUsed: record.date(NSMetadataItemLastUsedDateKey),
+            contentModified: record.date(NSMetadataItemContentModificationDateKey),
+            dateAdded: record.date(NSMetadataItemDateAddedKey),
+            whereFroms: record.strings(NSMetadataItemWhereFromsKey)
         )
         return ActivityClassifier.classify(metadata, since: since, downloadsPath: downloadsPath)
     }

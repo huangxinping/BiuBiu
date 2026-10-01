@@ -22,11 +22,11 @@ package final class AppInstallSource: ActivitySource {
         runner.start(
             predicate: predicate,
             scopes: scopes.filter { FileManager.default.fileExists(atPath: $0.path) },
-            onResults: { results in
-                onUpdate(results.compactMap { result in
-                    guard let path = result.string(NSMetadataItemPathKey),
-                          let added = result.date(NSMetadataItemDateAddedKey) else { return nil }
-                    let url = URL(fileURLWithPath: path)
+            attributes: [NSMetadataItemDateAddedKey],
+            onResults: { records in
+                onUpdate(records.compactMap { record in
+                    guard let added = record.date(NSMetadataItemDateAddedKey) else { return nil }
+                    let url = URL(fileURLWithPath: record.path)
                     return ActivityItem(url: url, kind: .application, event: .installed, date: added,
                                         displayName: url.deletingPathExtension().lastPathComponent)
                 })
