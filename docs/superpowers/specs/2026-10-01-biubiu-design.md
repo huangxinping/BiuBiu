@@ -35,10 +35,11 @@ BiuBiu 是一款常驻 macOS 菜单栏的近期文件快速访问工具。按下
 | 数据来源 | 第一版只用 Spotlight 实时查询（`NSMetadataQuery`） | 系统已建好索引，速度快、免维护，安装后立刻有历史 |
 | 面板布局 | 统一时间线 + 顶部分类切换 | 最贴合"我刚才动过什么"的回忆方式 |
 | 对文件的操作 | 只读：打开、在 Finder 中显示、拖出、快速预览、复制路径、打开方式、置顶 | 权限最小，误操作风险最低 |
-| 技术栈 | Swift 6、SwiftUI + AppKit，用 SwiftPM 构建 | 本机只有 Command Line Tools，没有 Xcode |
-| 系统要求 | macOS 14 及以上 | 可以使用 Observation 等较新的 SwiftUI 能力 |
+| 技术栈 | Swift 6 + **纯 AppKit**（不用 SwiftUI），用 SwiftPM 构建，不需要 Xcode | 已实测：只有 Command Line Tools 时，macOS 27 SDK 的 SwiftUI `@State` 宏、Swift Testing 宏和 XCTest 都不可用；Swift + AppKit 可以正常编译 |
+| 系统要求 | macOS 14 及以上 | 覆盖近三年的系统，可使用 `SMAppService` 等较新的 API |
 | 界面语言 | 简体中文和英文 | 开源项目，面向更多用户 |
-| 第三方依赖 | 只用 [KeyboardShortcuts](https://github.com/sindresorhus/KeyboardShortcuts)（MIT 协议） | 提供全局快捷键和设置页的"录制快捷键"控件 |
+| 第三方依赖 | **无** | KeyboardShortcuts 依赖 SwiftUI 宏，没有 Xcode 时无法编译；全局快捷键（Carbon `RegisterEventHotKey`）和录制控件自己实现 |
+| 自动化测试 | 自写的测试程序 `BiuBiuTestRunner`（一个可执行 target），用 `swift run BiuBiuTestRunner` 运行 | 没有 Xcode 时 XCTest 和 Swift Testing 都不可用；测试程序输出每条失败并以非零退出码结束，CI 照常可用 |
 | 开源协议 | MIT | — |
 
 ## 3. 架构
@@ -62,8 +63,9 @@ SpotlightFileSource  AppInstallSource  VolumeSource  PinStore
 
 代码拆成两个 SwiftPM target：
 
-- **`BiuBiuCore`**（库）：数据模型、`ActivitySource` 协议及三个实现、`ActivityStore`、`IgnoreRules`、`PinStore`、`AppSettings`、活动类型判定、时间分组。不依赖 SwiftUI 视图层，可以单独测试。
-- **`BiuBiu`**（可执行程序）：菜单栏图标、快捷键、浮动面板、SwiftUI 视图、设置窗口、欢迎窗口。
+- **`BiuBiuCore`**（库）：数据模型、`ActivitySource` 协议及三个实现、`ActivityStore`、`IgnoreRules`、`PinStore`、`AppSettings`、活动类型判定、时间分组、快捷键数据模型。不依赖 AppKit 视图层，可以单独测试。供测试使用的接口用 Swift 的 `package` 访问级别暴露。
+- **`BiuBiu`**（可执行程序）：菜单栏图标、全局快捷键注册、浮动面板、AppKit 视图、设置窗口、欢迎窗口。
+- **`BiuBiuTestRunner`**（可执行程序）：BiuBiuCore 的自动化测试，见第 8 节。
 
 ### 3.1 数据模型
 
@@ -99,11 +101,11 @@ protocol ActivitySource: Sendable {
 - **SpotlightFileSource**：在主目录范围内持续查询（`NSMetadataQueryUserHomeScope`）。查询条件见 4.2。把 Spotlight 返回的结果转换成 `ActivityItem`。
 - **AppInstallSource**：在 `/Applications` 和 `~/Applications` 中查询内容类型为 `com.apple.application-bundle`，并且"加入文件夹"时间（`kMDItemDateAdded`）落在时间范围内的项目。
 - **VolumeSource**：启动时读取当前已挂载的卷，之后监听系统的挂载和推出通知。只保留可移除、可推出或网络类型的卷。挂载时间只在运行期间收到通知时记录；启动前已经接上的卷，`date` 为 nil。负责执行推出操作。
-- **ActivityStore**（`@MainActor @Observable`）：合并各数据源结果；同一 URL 只保留 `date` 最新的一条；套用 `IgnoreRules`；按日期倒序排列，最多保留 500 条；根据搜索词和当前分类筛选；按时间分组。时钟可注入。
+- **ActivityStore**（`@MainActor` 的普通类，数据变化时调用 `onChange` 回调通知界面刷新）：合并各数据源结果；同一 URL 只保留 `date` 最新的一条；套用 `IgnoreRules`；按日期倒序排列，最多保留 500 条；根据搜索词和当前分类筛选；按时间分组。时钟可注入。
 - **IgnoreRules**：规则分三种：路径前缀、路径中包含的片段、扩展名。另有一个"忽略隐藏文件"开关。提供默认规则（见 4.3）和"恢复默认"。保存在 `UserDefaults` 中。
 - **PinStore**：保存置顶项目的有序列表，每项记录普通书签数据（bookmark，文件移动或改名后仍能找到）和置顶时间。存在 `~/Library/Application Support/BiuBiu/pins.json`。
-- **AppSettings**：时间范围、各分类是否显示、上次选中的分类、是否开机启动（通过 `SMAppService.mainApp`）、是否已看过欢迎页。快捷键由 KeyboardShortcuts 自己保存。
-- **PanelController**：管理一个 `NSPanel`，样式为 `.nonactivatingPanel`，窗口层级为浮动窗口，集合行为设为 `.canJoinAllSpaces` + `.fullScreenAuxiliary`，内容用 `NSHostingView` 承载 SwiftUI。负责计算面板位置、显示和隐藏，以及点击面板外部时自动关闭。
+- **AppSettings**：时间范围、各分类是否显示、上次选中的分类、是否开机启动（通过 `SMAppService.mainApp`）、是否已看过欢迎页。全局快捷键（键码 + 修饰键）也保存在这里。
+- **PanelController**：管理一个 `NSPanel`，样式为 `.nonactivatingPanel`，窗口层级为浮动窗口，集合行为设为 `.canJoinAllSpaces` + `.fullScreenAuxiliary`，内容全部用 AppKit 实现（列表用 `NSTableView`）。负责计算面板位置、显示和隐藏，以及点击面板外部时自动关闭。
 - **StatusItemController**：管理菜单栏图标。左键点击切换面板显示；右键弹出菜单（设置、退出）。
 
 ## 4. 数据规则
@@ -221,12 +223,17 @@ kMDItemLastUsedDate >= since
 
 ## 8. 测试
 
-### 8.1 自动化测试（`swift test`，覆盖 BiuBiuCore）
+### 8.1 自动化测试（`swift run BiuBiuTestRunner`，覆盖 BiuBiuCore）
+
+测试程序提供 `expect(条件, 描述)` 和 `expectEqual(实际, 期望)` 两个断言，以及按名称分组的测试用例注册。运行时逐条输出失败的用例名、文件和行号，最后输出汇总；有任何失败时以退出码 1 结束。
+
+覆盖范围：
 
 - `IgnoreRules`：各规则类型的匹配、隐藏文件开关、默认规则、恢复默认。
 - 活动类型判定：用假的元数据组合覆盖 4.2 的每条规则，包括文件夹忽略修改时间、下载判定、`sourceHost` 解析。
 - `ActivityStore`：多数据源合并、同 URL 去重取最新、套用忽略规则、排序、500 条上限、搜索筛选、分类筛选、时间分组（注入固定时钟，覆盖跨天边界）。
 - `PinStore`：保存和读取、排序、文件损坏时的备份与重置。
+- 快捷键模型：序列化与反序列化、显示文字（如 `⌥⌘R`）、拒绝不含修饰键的组合。
 - 数据源都放在协议后面，测试中用假数据源，不依赖真实的 Spotlight。
 
 ### 8.2 手动验收清单
@@ -251,10 +258,9 @@ BiuBiu/
 ├── Package.swift
 ├── Sources/
 │   ├── BiuBiuCore/      # 模型、数据源、Store、规则、持久化
-│   └── BiuBiu/          # App 外壳与 SwiftUI 视图、本地化资源
-├── Tests/
-│   └── BiuBiuCoreTests/
-├── Resources/           # Info.plist 模板、AppIcon.icns
+│   ├── BiuBiu/          # App 外壳与 AppKit 视图
+│   └── BiuBiuTestRunner/ # 自写的测试程序
+├── Resources/           # Info.plist 模板、AppIcon.icns、en.lproj / zh-Hans.lproj
 ├── scripts/
 │   └── build-app.sh
 ├── .github/workflows/
@@ -267,16 +273,16 @@ BiuBiu/
 
 ### 9.2 打包流程（`scripts/build-app.sh`）
 
-1. `swift build -c release`
-2. 组装 `BiuBiu.app`：复制可执行文件和资源；Info.plist 设置 `LSUIElement = YES`（不显示 Dock 图标）、bundle identifier、版本号、最低系统版本 14.0。
+1. `swift build -c release --arch arm64 --arch x86_64`（已实测：Command Line Tools 可以直接产出同时支持 Apple 芯片和 Intel 的通用二进制）
+2. 组装 `BiuBiu.app`：复制可执行文件；把 `Resources/` 下的 `.lproj` 本地化文件复制到 `Contents/Resources/`；Info.plist 设置 `LSUIElement = YES`（不显示 Dock 图标）、bundle identifier、版本号、最低系统版本 14.0。
 3. 用自签名证书执行 `codesign`。证书名称通过环境变量传入；没有提供时退回 ad-hoc 签名，用于本地开发。
 4. 用 `ditto` 打成 `BiuBiu-<版本>.zip`。
 
-需要验证：只用 Command Line Tools 能否构建同时支持 Apple 芯片和 Intel 的通用二进制。如果不行，第一版只发布 Apple 芯片版本，并在 README 中注明。
+界面文字统一通过 `NSLocalizedString` 读取，键名就是英文原文。所以本地开发时直接 `swift run BiuBiu`（没有 `.lproj`），界面显示英文；打包后的 app 按系统语言显示中文或英文。
 
 ### 9.3 GitHub Actions
 
-- `ci.yml`：每次 push 和 PR 时执行 `swift build` 和 `swift test`。
+- `ci.yml`：每次 push 和 PR 时执行 `swift build` 和 `swift run BiuBiuTestRunner`。
 - `release.yml`：推送 `v*` 标签时，从仓库 secrets 导入自签名证书到临时钥匙串，运行 `build-app.sh`，把 zip 上传到对应的 GitHub Release。
 
 ### 9.4 README
@@ -292,6 +298,5 @@ BiuBiu/
 |---|---|---|
 | 隐私授权弹窗的触发范围不明确 | 第 6 节的实验 | 按结果调整欢迎窗口 |
 | 不同 macOS 版本上，非开发者签名的 app 首次打开受到的限制 | 在本机实际打包并从下载的 zip 打开 | README 写准确的放行步骤 |
-| 只用 Command Line Tools 能否构建通用二进制 | 分别构建两个架构后用 `lipo` 合并 | 不行则只发 Apple 芯片版本 |
 | `SMAppService` 对非开发者签名的 app 是否可用 | 实际调用测试 | 不可用则去掉开机启动，并在 README 中说明如何手动添加登录项 |
 | Spotlight 写入索引的延迟让新下载的文件出现得太慢 | 手动验收中计时 | 增加针对 `~/Downloads` 的 FSEvents 数据源（第一版不做） |
