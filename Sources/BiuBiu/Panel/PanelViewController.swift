@@ -78,6 +78,8 @@ final class PanelViewController: NSViewController {
         tableView.target = self
         tableView.action = #selector(rowClicked)
         tableView.setDraggingSourceOperationMask(.copy, forLocal: false)
+        tableView.menu = NSMenu()
+        tableView.menu?.delegate = self
 
         scrollView.documentView = tableView
         scrollView.drawsBackground = false
