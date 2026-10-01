@@ -14,6 +14,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                            homeDirectory: NSHomeDirectory())
     private var statusItem: StatusItemController?
     private var panelController: PanelController?
+    private var settingsWindow: SettingsWindowController?
     private var sourcesStartedAt = Date.distantPast
     private var hotKeyWorking = true
 
@@ -92,10 +93,38 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func setIgnoreRules(_ rules: IgnoreRules) {
         settings.ignoreRules = rules
         store.ignoreRules = rules
+        settingsWindow?.ignoreRulesViewController.update(rules: rules)
     }
 
     private func showSettings() {
-        // Replaced by the settings window in Task 13.
         panelController?.hide()
+        if settingsWindow == nil {
+            let general = GeneralSettingsViewController(settings: settings, hotKeyWorking: hotKeyWorking, callbacks: .init(
+                hotKeyChanged: { [weak self] combo in
+                    guard let self else { return false }
+                    self.settings.hotKey = combo
+                    return self.applyHotKey()
+                },
+                hotKeyRecording: { [weak self] recording in
+                    if recording { self?.hotKeys.unregister() } else { self?.applyHotKey() }
+                },
+                timeWindowChanged: { [weak self] days in
+                    guard let self else { return }
+                    self.settings.timeWindowDays = days
+                    self.store.timeWindowDays = days
+                    self.startSources()
+                },
+                hiddenCategoriesChanged: { [weak self] hidden in
+                    guard let self else { return }
+                    self.settings.hiddenCategories = hidden
+                    self.panelController?.viewController.reloadCategories()
+                }
+            ))
+            let ignore = IgnoreRulesViewController(rules: settings.ignoreRules) { [weak self] rules in
+                self?.setIgnoreRules(rules)
+            }
+            settingsWindow = SettingsWindowController(general: general, ignoreRules: ignore)
+        }
+        settingsWindow?.present()
     }
 }
