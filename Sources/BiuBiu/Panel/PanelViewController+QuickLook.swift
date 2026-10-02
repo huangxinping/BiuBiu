@@ -1,7 +1,9 @@
 import AppKit
 import Quartz
 
-extension PanelViewController: @preconcurrency QLPreviewPanelDataSource, @preconcurrency QLPreviewPanelDelegate {
+// The data source and delegate methods are nonisolated (their protocols are not main-actor annotated on
+// every SDK) and step onto the main actor, where Quick Look always calls them.
+extension PanelViewController: QLPreviewPanelDataSource, QLPreviewPanelDelegate {
     func toggleQuickLook() {
         guard selectedPanelRow?.url != nil else { return }
         let panel = QLPreviewPanel.shared()!
@@ -31,19 +33,23 @@ extension PanelViewController: @preconcurrency QLPreviewPanelDataSource, @precon
         }
     }
 
-    func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
-        selectedPanelRow?.url == nil ? 0 : 1
+    nonisolated func numberOfPreviewItems(in panel: QLPreviewPanel!) -> Int {
+        MainActor.assumeIsolated { selectedPanelRow?.url == nil ? 0 : 1 }
     }
 
-    func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> (any QLPreviewItem)! {
-        selectedPanelRow?.url as NSURL?
+    nonisolated func previewPanel(_ panel: QLPreviewPanel!, previewItemAt index: Int) -> (any QLPreviewItem)! {
+        let url = MainActor.assumeIsolated { selectedPanelRow?.url }
+        return url as NSURL?
     }
 
     /// Arrow keys inside Quick Look move the panel's selection, like Finder.
-    func previewPanel(_ panel: QLPreviewPanel!, handle event: NSEvent!) -> Bool {
+    nonisolated func previewPanel(_ panel: QLPreviewPanel!, handle event: NSEvent!) -> Bool {
         guard event.type == .keyDown, event.keyCode == 125 || event.keyCode == 126 else { return false }
-        moveSelection(by: event.keyCode == 125 ? 1 : -1)
-        panel.reloadData()
+        let step = event.keyCode == 125 ? 1 : -1
+        MainActor.assumeIsolated {
+            moveSelection(by: step)
+            panel.reloadData()
+        }
         return true
     }
 }

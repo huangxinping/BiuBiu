@@ -44,6 +44,9 @@ enum SourcesTests {
                    "content type was not collected")
             expect(records.allSatisfy { $0.string(NSMetadataItemCFBundleIdentifierKey)?.isEmpty == false },
                    "bundle identifier was not collected")
+            // Not in the query's cache (like the path); read from the item on demand, only where needed.
+            expect(records.allSatisfy { $0.uncachedDate(NSMetadataItemFSCreationDateKey) != nil },
+                   "file-system creation date is not readable from the item")
         },
         TestCase("Sources: apps in ~/Applications are left to the app source, others stay files") {
             let apps = "/Users/me/Applications/"

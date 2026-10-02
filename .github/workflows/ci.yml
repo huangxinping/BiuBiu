@@ -9,8 +9,8 @@ jobs:
   test:
     runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build
-        run: swift build
+        run: swift build -Xswiftc -warnings-as-errors
       - name: Test
         run: swift run BiuBiuTestRunner

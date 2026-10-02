@@ -38,13 +38,16 @@ package struct HotKeyCombo: Codable, Hashable, Sendable {
         return mask
     }
 
-    package var displayString: String {
+    package var displayString: String { displayString(localizingKeyName: { $0 }) }
+
+    /// The shortcut as shown in the UI; `localize` translates key names such as "Space".
+    package func displayString(localizingKeyName localize: (String) -> String) -> String {
         var s = ""
         if modifiers.contains(.control) { s += "⌃" }
         if modifiers.contains(.option) { s += "⌥" }
         if modifiers.contains(.shift) { s += "⇧" }
         if modifiers.contains(.command) { s += "⌘" }
-        return s + (Self.keyNames[keyCode] ?? "?")
+        return s + localize(Self.keyNames[keyCode] ?? "?")
     }
 
     /// Names for US-layout virtual key codes.

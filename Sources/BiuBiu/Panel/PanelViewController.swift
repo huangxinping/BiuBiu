@@ -128,7 +128,8 @@ final class PanelViewController: NSViewController {
         reloadCategories()
         searchField.stringValue = ""
         deps.store.searchText = ""
-        reload(resetSelection: true)
+        // Resolve pins (following moved files) once per opening, not on every keystroke.
+        reload(resetSelection: true, refreshPins: true)
         view.window?.makeFirstResponder(searchField)
     }
 
@@ -147,17 +148,17 @@ final class PanelViewController: NSViewController {
         segments.selectedSegment = visibleCategories.firstIndex(of: deps.store.category) ?? 0
     }
 
-    func reload(resetSelection: Bool) {
-        let previous = selectedRow.flatMap { rows.indices.contains($0) ? rows[$0].url : nil }
+    func reload(resetSelection: Bool, refreshPins: Bool = false) {
+        let previous = selectedRow.flatMap { rows.indices.contains($0) ? rows[$0] : nil }
         rows = PanelRowsBuilder.rows(
-            pins: deps.pinStore.entries(),
+            pins: deps.pinStore.entries(refresh: refreshPins),
             showPinned: deps.store.category == .all,
             pinnedCollapsed: deps.settings.pinnedCollapsed,
             searchText: deps.store.searchText,
             sections: deps.store.sections
         )
         tableView.reloadData()
-        let keep = resetSelection ? nil : previous.flatMap { url in rows.firstIndex { $0.url == url } }
+        let keep = resetSelection ? nil : previous.flatMap { PanelRowsBuilder.index(of: $0, in: rows) }
         select(keep ?? PanelRowsBuilder.firstSelectable(in: rows))
         updateEmptyState()
     }

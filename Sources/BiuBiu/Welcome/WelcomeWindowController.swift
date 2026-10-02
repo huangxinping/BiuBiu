@@ -12,8 +12,9 @@ enum PrivacyNote {
 }
 
 @MainActor
-final class WelcomeWindowController: NSWindowController {
+final class WelcomeWindowController: NSWindowController, NSWindowDelegate {
     private let onDone: () -> Void
+    private var didFinish = false
     private let launchCheckbox = NSButton(checkboxWithTitle: L("Open BiuBiu at login"), target: nil, action: nil)
 
     init(shortcut: String?, privacyNote: PrivacyNote, onDone: @escaping () -> Void) {
@@ -23,6 +24,7 @@ final class WelcomeWindowController: NSWindowController {
         window.title = L("Welcome to BiuBiu")
         window.isReleasedWhenClosed = false
         super.init(window: window)
+        window.delegate = self
 
         let title = NSTextField(labelWithString: L("Welcome to BiuBiu"))
         title.font = .systemFont(ofSize: 20, weight: .semibold)
@@ -76,8 +78,21 @@ final class WelcomeWindowController: NSWindowController {
     }
 
     @objc private func finish() {
-        try? LaunchAtLogin.setEnabled(launchCheckbox.state == .on)
         close()
+    }
+
+    /// "Get Started" and the window's close button end the same way: keep the login choice, then hand back.
+    func windowWillClose(_ notification: Notification) {
+        guard !didFinish else { return }
+        didFinish = true
+        let wanted = launchCheckbox.state == .on
+        if wanted != LaunchAtLogin.isEnabled {
+            do {
+                try LaunchAtLogin.setEnabled(wanted)
+            } catch {
+                Log.app.error("Open at login could not be changed: \(error.localizedDescription, privacy: .public)")
+            }
+        }
         onDone()
     }
 }

@@ -31,6 +31,7 @@ package struct PinnedEntry: Hashable, Sendable {
 package final class PinStore {
     package private(set) var pins: [Pin] = []
     private let fileURL: URL
+    private var cachedEntries: [PinnedEntry]?
     private let now: () -> Date
 
     package static func defaultFileURL() -> URL {
@@ -53,21 +54,25 @@ package final class PinStore {
         guard !isPinned(path: path) else { return }
         let bookmark = try url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
         pins.append(Pin(bookmark: bookmark, path: path, pinnedAt: now()))
+        cachedEntries = nil
         save()
     }
 
     package func unpin(path: String) {
         pins.removeAll { $0.path == path }
+        cachedEntries = nil
         save()
     }
 
-    /// Resolves every pin, oldest first, refreshing paths of items that moved.
-    package func entries() -> [PinnedEntry] {
+    /// Every pin, oldest first. `refresh` resolves the bookmarks again (following moves); otherwise the last
+    /// resolution is reused, so typing in the search field does not touch the disk for every pin.
+    package func entries(refresh: Bool = true) -> [PinnedEntry] {
+        if !refresh, let cachedEntries { return cachedEntries }
         var changed = false
         let result = pins.indices.map { index -> PinnedEntry in
             var pin = pins[index]
             var isStale = false
-            guard let url = try? URL(resolvingBookmarkData: pin.bookmark, options: [.withoutUI],
+            guard let url = try? URL(resolvingBookmarkData: pin.bookmark, options: [.withoutUI, .withoutMounting],
                                      relativeTo: nil, bookmarkDataIsStale: &isStale),
                   FileManager.default.fileExists(atPath: url.path),
                   !Self.isInTrash(url) else {
@@ -85,6 +90,7 @@ package final class PinStore {
             return PinnedEntry(pin: pin, url: url.standardizedFileURL)
         }
         if changed { save() }
+        cachedEntries = result
         return result
     }
 

@@ -7,6 +7,13 @@
 # Produces <output-dir>/biubiu-signing.p12 and prints the base64 value for the GitHub secret.
 set -euo pipefail
 
+# The PKCS#12 export below needs OpenSSL 3 (-legacy). macOS's own /usr/bin/openssl is LibreSSL.
+if ! openssl version 2>/dev/null | grep -q '^OpenSSL 3'; then
+  echo "This script needs OpenSSL 3 (found: $(openssl version 2>/dev/null || echo none))." >&2
+  echo "Install it with 'brew install openssl@3' and make sure it comes first on PATH." >&2
+  exit 1
+fi
+
 OUT="${1:?usage: $0 <output-dir>}"
 NAME="BiuBiu Self-Signed"
 mkdir -p "$OUT"

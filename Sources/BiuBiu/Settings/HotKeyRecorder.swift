@@ -82,6 +82,6 @@ final class HotKeyRecorder: NSButton {
     }
 
     private func updateTitle() {
-        title = isRecording ? L("Type shortcut…") : (combo?.displayString ?? L("Record Shortcut"))
+        title = isRecording ? L("Type shortcut…") : (combo?.localizedDisplayString ?? L("Record Shortcut"))
     }
 }

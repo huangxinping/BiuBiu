@@ -9,6 +9,33 @@ enum PanelTests {
                                  url: URL(fileURLWithPath: "/Users/me/Proj"))
 
     static var tests: [TestCase] { [
+        TestCase("PanelRows: a reload keeps the selection on the same kind of row") {
+            let pinnedItem = PinnedEntry(pin: Pin(bookmark: Data(), path: "/Users/me/a.txt", pinnedAt: Date()),
+                                         url: URL(fileURLWithPath: "/Users/me/a.txt"))
+            let rows: [PanelRow] = [.pinnedHeader(collapsed: false), .pinned(pinnedItem),
+                                    .sectionHeader(.time(.today)), .item(item)]
+            // `item` is /Users/me/a.txt too: selecting it in the timeline must not jump to the pin.
+            expectEqual(PanelRowsBuilder.index(of: .item(item), in: rows), 3)
+            expectEqual(PanelRowsBuilder.index(of: .pinned(pinnedItem), in: rows), 1)
+            let moved = ActivityItem(url: URL(fileURLWithPath: "/Users/me/a.txt"), kind: .file, event: .opened, date: Date())
+            expectEqual(PanelRowsBuilder.index(of: .item(moved), in: rows), 3)
+            expect(PanelRowsBuilder.index(of: .item(moved), in: [.pinned(pinnedItem)]) == nil)
+        },
+        TestCase("Spotlight status: results arriving later clear a no-results state") {
+            expectEqual(SpotlightStatus.next(current: .searching, recordCount: 0, finishedGathering: true), .noResults)
+            expectEqual(SpotlightStatus.next(current: .searching, recordCount: 3, finishedGathering: true), .ok)
+            expectEqual(SpotlightStatus.next(current: .noResults, recordCount: 2, finishedGathering: false), .ok)
+            expectEqual(SpotlightStatus.next(current: .noResults, recordCount: 0, finishedGathering: false), .noResults)
+            expectEqual(SpotlightStatus.next(current: .ok, recordCount: 0, finishedGathering: false), .ok)
+        },
+        TestCase("RelativeTime: follows the app's language, not the system's") {
+            let now = Date(timeIntervalSince1970: 1_000_000)
+            let zh = RelativeTimeText.string(for: now.addingTimeInterval(-300), now: now, localization: "zh-Hans")
+            let en = RelativeTimeText.string(for: now.addingTimeInterval(-300), now: now, localization: "en")
+            expect(zh?.contains("分钟") == true, "zh: \(zh ?? "nil")")
+            expect(en?.contains("min") == true, "en: \(en ?? "nil")")
+            expect(RelativeTimeText.string(for: now.addingTimeInterval(-30), now: now, localization: "en") == nil)
+        },
         TestCase("PanelRows: pinned block then sections") {
             let rows = PanelRowsBuilder.rows(pins: [pin], showPinned: true, pinnedCollapsed: false, searchText: "",
                                              sections: [TimelineSection(kind: .time(.justNow), items: [item])])

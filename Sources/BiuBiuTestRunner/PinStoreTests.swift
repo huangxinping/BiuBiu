@@ -4,6 +4,20 @@ import BiuBiuCore
 @MainActor
 enum PinStoreTests {
     static var tests: [TestCase] { [
+        TestCase("PinStore: entries are cached until refreshed or the pins change") {
+            let dir = try makeTempDirectory()
+            defer { try? FileManager.default.removeItem(at: dir) }
+            let a = dir.appendingPathComponent("a.txt"), b = dir.appendingPathComponent("b.txt")
+            try Data().write(to: a); try Data().write(to: b)
+            let store = PinStore(fileURL: dir.appendingPathComponent("pins.json"))
+            try store.pin(url: a)
+            expectEqual(store.entries().first?.displayName, "a.txt")
+            try FileManager.default.moveItem(at: a, to: dir.appendingPathComponent("moved.txt"))
+            expectEqual(store.entries(refresh: false).first?.displayName, "a.txt")
+            expectEqual(store.entries(refresh: true).first?.displayName, "moved.txt")
+            try store.pin(url: b)
+            expectEqual(store.entries(refresh: false).map(\.displayName), ["moved.txt", "b.txt"])
+        },
         TestCase("PinStore: pins persist across instances, oldest first, no duplicates") {
             let dir = try makeTempDirectory()
             defer { try? FileManager.default.removeItem(at: dir) }

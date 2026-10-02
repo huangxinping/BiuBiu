@@ -35,6 +35,12 @@
     <string>14.0</string>
     <key>LSUIElement</key>
     <true/>
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>BiuBiu lists the files you recently opened, saved or downloaded on your Desktop.</string>
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>BiuBiu lists the files you recently opened, saved or downloaded in Documents.</string>
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>BiuBiu lists the files you recently downloaded.</string>
     <key>NSHumanReadableCopyright</key>
     <string>MIT License</string>
 </dict>

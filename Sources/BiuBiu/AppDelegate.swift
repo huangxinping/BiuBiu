@@ -43,8 +43,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         store.onChange = { [weak panelViewController] in panelViewController?.storeDidChange() }
 
         applyHotKey()
-        startSources()
-        if !settings.hasSeenWelcome { showWelcome() }
+        // On first run, start reading folders only after the welcome window has explained the macOS
+        // access prompts that reading them can trigger.
+        if settings.hasSeenWelcome { startSources() } else { showWelcome() }
     }
 
     // MARK: - Panel
@@ -88,7 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let ok = hotKeys.register(combo) { [weak self] in self?.togglePanel(fromStatusItem: false) }
         if !ok { Log.app.error("Could not register shortcut \(combo.displayString, privacy: .public)") }
         hotKeyWorking = ok
-        panelController?.viewController.hotKeyDisplay = ok ? combo.displayString : nil
+        panelController?.viewController.hotKeyDisplay = ok ? combo.localizedDisplayString : nil
         return ok
     }
 
@@ -133,9 +134,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func showWelcome() {
         settings.hasSeenWelcome = true
         // Set from docs/superpowers/notes/2026-10-01-privacy-probe.md (Task 1).
-        welcomeWindow = WelcomeWindowController(shortcut: settings.hotKey?.displayString,
+        welcomeWindow = WelcomeWindowController(shortcut: settings.hotKey?.localizedDisplayString,
                                                 privacyNote: .expectPrompts) { [weak self] in
             self?.welcomeWindow = nil
+            self?.startSources()
         }
         welcomeWindow?.present()
     }

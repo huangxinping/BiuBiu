@@ -11,6 +11,11 @@ enum SettingsAndHotKeyTests {
     }
 
     static var tests: [TestCase] { [
+        TestCase("HotKey: key names can be localized for display") {
+            let combo = HotKeyCombo(keyCode: 49, modifiers: [.control, .option])
+            expectEqual(combo.displayString(localizingKeyName: { $0 == "Space" ? "空格" : $0 }), "⌃⌥空格")
+            expectEqual(HotKeyCombo.defaultToggle.displayString(localizingKeyName: { _ in "x" }), "⌥⌘x")
+        },
         TestCase("Settings: defaults") {
             let s = AppSettings(defaults: freshDefaults())
             expectEqual(s.timeWindowDays, 7)

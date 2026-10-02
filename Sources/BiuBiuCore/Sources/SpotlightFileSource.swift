@@ -11,7 +11,7 @@ package final class SpotlightFileSource: ActivitySource {
 
     /// Everything `item(from:since:downloadsPath:)` and the app check read, collected by the query.
     private static let attributes = [
-        NSMetadataItemContentTypeKey, NSMetadataItemLastUsedDateKey, NSMetadataItemContentCreationDateKey,
+        NSMetadataItemContentTypeKey, NSMetadataItemLastUsedDateKey,
         NSMetadataItemContentModificationDateKey, NSMetadataItemDateAddedKey, NSMetadataItemWhereFromsKey,
     ]
 
@@ -56,14 +56,18 @@ package final class SpotlightFileSource: ActivitySource {
     }
 
     private static func item(from record: MetadataRecord, since: Date, downloadsPath: String) -> ActivityItem? {
+        let whereFroms = record.strings(NSMetadataItemWhereFromsKey)
+        // Only a download saved outside Downloads needs its creation date (see ActivityClassifier).
+        let needsCreation = !whereFroms.isEmpty && !record.path.hasPrefix(downloadsPath + "/")
         let metadata = FileMetadata(
             path: record.path,
             isFolder: record.string(NSMetadataItemContentTypeKey) == "public.folder",
             lastUsed: record.date(NSMetadataItemLastUsedDateKey),
-            contentCreated: record.date(NSMetadataItemContentCreationDateKey),
+            // The file system's creation date: kMDItemContentCreationDate can come from EXIF or PDF metadata.
+            contentCreated: needsCreation ? record.uncachedDate(NSMetadataItemFSCreationDateKey) : nil,
             contentModified: record.date(NSMetadataItemContentModificationDateKey),
             dateAdded: record.date(NSMetadataItemDateAddedKey),
-            whereFroms: record.strings(NSMetadataItemWhereFromsKey)
+            whereFroms: whereFroms
         )
         return ActivityClassifier.classify(metadata, since: since, downloadsPath: downloadsPath)
     }

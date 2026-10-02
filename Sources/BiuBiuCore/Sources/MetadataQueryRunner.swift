@@ -6,17 +6,30 @@ package enum SpotlightStatus: Equatable, Sendable {
     /// The query finished gathering with nothing at all, which usually means the folder is not indexed.
     case noResults
     case failedToStart
+
+    /// The status after a result snapshot. "No results" is decided when gathering ends, and cleared as soon
+    /// as a later update brings anything.
+    package static func next(current: SpotlightStatus, recordCount: Int, finishedGathering: Bool) -> SpotlightStatus {
+        if finishedGathering { return recordCount == 0 ? .noResults : .ok }
+        return recordCount > 0 ? .ok : current
+    }
 }
 
 /// One Spotlight result: its path and the attributes the query was told to collect.
 package struct MetadataRecord {
     package let path: String
     private let values: [String: Any]
+    private let item: NSMetadataItem?
 
-    package init(path: String, values: [String: Any]) {
+    package init(path: String, values: [String: Any], item: NSMetadataItem? = nil) {
         self.path = path
         self.values = values
+        self.item = item
     }
+
+    /// Reads an attribute the query cannot cache (file-system dates, like the path). Each call is a round
+    /// trip to the Spotlight server, so use it only for the few records that need it.
+    package func uncachedDate(_ key: String) -> Date? { item?.value(forAttribute: key) as? Date }
 
     package func date(_ key: String) -> Date? { values[key] as? Date }
     package func string(_ key: String) -> String? { values[key] as? String }
@@ -33,6 +46,7 @@ package struct MetadataRecord {
 package final class MetadataQueryRunner {
     private var query: NSMetadataQuery?
     private var observers: [NSObjectProtocol] = []
+    private var status = SpotlightStatus.searching
 
     package init() {}
 
@@ -62,11 +76,16 @@ package final class MetadataQueryRunner {
                 for key in attributes {
                     if let value = query.value(ofAttribute: key, forResultAt: index) { values[key] = value }
                 }
-                return MetadataRecord(path: path, values: values)
+                return MetadataRecord(path: path, values: values, item: item)
             }
             query.enableUpdates()
             onResults(records)
-            if finishedGathering { onStatus(records.isEmpty ? .noResults : .ok) }
+            let next = SpotlightStatus.next(current: self.status, recordCount: records.count,
+                                            finishedGathering: finishedGathering)
+            if next != self.status {
+                self.status = next
+                onStatus(next)
+            }
         }
         observers = [
             center.addObserver(forName: .NSMetadataQueryDidFinishGathering, object: query, queue: .main) { _ in
@@ -76,9 +95,11 @@ package final class MetadataQueryRunner {
                 MainActor.assumeIsolated { publish(false) }
             },
         ]
+        status = .searching
         onStatus(.searching)
         if !query.start() {
             Log.sources.error("NSMetadataQuery failed to start: \(predicate.predicateFormat, privacy: .public)")
+            status = .failedToStart
             onStatus(.failedToStart)
         }
     }

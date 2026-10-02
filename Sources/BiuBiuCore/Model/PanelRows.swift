@@ -54,6 +54,18 @@ package enum PanelRowsBuilder {
         return current
     }
 
+    /// Where `row` is after a reload: the same kind of row (pin or timeline item) for the same file, so a
+    /// timeline selection does not jump to the pinned copy of the same file.
+    package static func index(of row: PanelRow, in rows: [PanelRow]) -> Int? {
+        guard let url = row.url else { return nil }
+        return rows.firstIndex { candidate in
+            switch (row, candidate) {
+            case (.pinned, .pinned), (.item, .item): candidate.url == url
+            default: false
+            }
+        }
+    }
+
     package static func firstSelectable(in rows: [PanelRow]) -> Int? {
         rows.firstIndex(where: \.isSelectable)
     }

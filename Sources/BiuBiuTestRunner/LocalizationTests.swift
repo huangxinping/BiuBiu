@@ -26,10 +26,21 @@ enum LocalizationTests {
         Set(ActivityEvent.allCases.map(\.labelKey)
             + ActivityCategory.allCases.map(\.titleKey)
             + TimeGroup.allCases.map(\.titleKey)
-            + [SectionKind.connected.titleKey])
+            + [SectionKind.connected.titleKey]
+            + ["Space"])  // HotKeyCombo key name, translated through L in the app
     }
 
     static var tests: [TestCase] { [
+        TestCase("Localization: every privacy purpose string in Info.plist has a zh-Hans translation") {
+            let plist = NSDictionary(contentsOf: packageRoot.appendingPathComponent("Resources/Info.plist")) as? [String: Any] ?? [:]
+            let purposes = plist.keys.filter { $0.hasSuffix("UsageDescription") }
+            expect(purposes.count >= 3, "expected Desktop/Documents/Downloads purpose strings, found \(purposes.sorted())")
+            let table = NSDictionary(contentsOf: packageRoot.appendingPathComponent("Resources/zh-Hans.lproj/InfoPlist.strings"))
+                as? [String: String] ?? [:]
+            for key in purposes.sorted() where table[key] == nil {
+                expect(false, "missing zh-Hans InfoPlist.strings entry for \(key)")
+            }
+        },
         TestCase("Localization: every key has a zh-Hans translation") {
             let file = packageRoot.appendingPathComponent("Resources/zh-Hans.lproj/Localizable.strings")
             guard let table = NSDictionary(contentsOf: file) as? [String: String] else {
