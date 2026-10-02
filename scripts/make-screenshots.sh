@@ -6,12 +6,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 OUT="${1:-docs/images}"
-swift build --product BiuBiu
-BIN_DIR="$(swift build --show-bin-path)"
-# Localized strings are looked up next to a bare executable.
-cp -R Resources/*.lproj "$BIN_DIR/"
+BIUBIU="$(scripts/dev-binary.sh)"
 # One set per language the app ships (Resources/*.lproj), named panel-<language>.jpg and so on.
 for lproj in Resources/*.lproj; do
   language="$(basename "$lproj" .lproj)"
-  "$BIN_DIR/BiuBiu" --screenshots "$OUT" -AppleLanguages "($language)"
+  "$BIUBIU" --screenshots "$OUT" -AppleLanguages "($language)"
 done

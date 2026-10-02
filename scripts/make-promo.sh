@@ -11,11 +11,7 @@ command -v ffmpeg >/dev/null || { echo "ffmpeg is required: brew install ffmpeg"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 
-swift build --product BiuBiu
-BIN_DIR="$(swift build --show-bin-path)"
-# Localized strings are looked up next to a bare executable.
-cp -R Resources/*.lproj "$BIN_DIR/"
-"$BIN_DIR/BiuBiu" --promo-sprites "$WORK/sprites" -AppleLanguages "(en)"
+"$(scripts/dev-binary.sh)" --promo-sprites "$WORK/sprites" -AppleLanguages "(en)"
 
 swift build -c release --product BiuBiuPromo
 "$(swift build -c release --show-bin-path)/BiuBiuPromo" \

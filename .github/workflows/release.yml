@@ -15,8 +15,18 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Test
-        run: swift run BiuBiuTestRunner
+      - name: Require the tag to be on main
+        run: |
+          git fetch --no-tags origin main
+          if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/main; then
+            echo "Tag $GITHUB_REF_NAME points at a commit that is not on main; releases come from main only." >&2
+            exit 1
+          fi
+
+      - name: Build and test
+        run: |
+          swift build -Xswiftc -warnings-as-errors
+          "$(swift build --show-bin-path)/BiuBiuTestRunner"
 
       - name: Import signing certificate
         env:
@@ -26,7 +36,9 @@ jobs:
           echo "$SIGNING_P12_BASE64" | base64 --decode > "$RUNNER_TEMP/signing.p12"
           scripts/import-signing-cert.sh "$RUNNER_TEMP/signing.p12" "$SIGNING_P12_PASSWORD" "$RUNNER_TEMP/signing.keychain-db"
           # codesign looks up the identity's private key through the search list, even with --keychain.
-          security list-keychains -d user -s "$RUNNER_TEMP/signing.keychain-db" $(security list-keychains -d user | tr -d '"')
+          existing=()
+          while IFS= read -r keychain; do existing+=("$keychain"); done < <(security list-keychains -d user | tr -d '" ')
+          security list-keychains -d user -s "$RUNNER_TEMP/signing.keychain-db" "${existing[@]}"
           HASH=$(security find-identity -p codesigning "$RUNNER_TEMP/signing.keychain-db" | awk '/BiuBiu Self-Signed/ {print $2; exit}')
           EXPECTED=$(tr -d '[:space:]' < Resources/signing-certificate-sha1.txt)
           if [ "$HASH" != "$EXPECTED" ]; then

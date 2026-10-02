@@ -18,7 +18,7 @@ APP="dist/BiuBiu.app"
 swift build -c release --arch arm64 --arch x86_64 --product BiuBiu
 BIN_DIR="$(swift build -c release --arch arm64 --arch x86_64 --show-bin-path)"
 
-rm -rf dist
+rm -rf "$APP" dist/BiuBiu-*.zip
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/BiuBiu" "$APP/Contents/MacOS/BiuBiu"
 sed -e "s|__VERSION__|$VERSION|" -e "s|__BUILD__|$BUILD_NUMBER|" -e "s|__REPO_URL__|$REPO_URL|" \

@@ -17,19 +17,24 @@ func fail(_ message: String) -> Never {
 }
 
 @MainActor
-func runFFmpeg(_ arguments: [String], input: ((FileHandle) -> Void)? = nil) {
+func runFFmpeg(_ arguments: [String], input: ((FileHandle) throws -> Void)? = nil) {
+    // Writing to ffmpeg after it exited raises SIGPIPE; ignoring it turns that into a thrown error below.
+    signal(SIGPIPE, SIG_IGN)
     let process = Process()
     process.executableURL = URL(fileURLWithPath: "/usr/bin/env")
     process.arguments = ["ffmpeg", "-hide_banner", "-loglevel", "error", "-y"] + arguments
     let pipe = Pipe()
     if input != nil { process.standardInput = pipe }
     do { try process.run() } catch { fail("could not start ffmpeg: \(error)") }
+    var writeError: Error?
     if let input {
-        input(pipe.fileHandleForWriting)
+        do { try input(pipe.fileHandleForWriting) } catch { writeError = error }
         try? pipe.fileHandleForWriting.close()
     }
     process.waitUntilExit()
-    if process.terminationStatus != 0 { fail("ffmpeg failed: \(arguments.joined(separator: " "))") }
+    if process.terminationStatus != 0 || writeError != nil {
+        fail("ffmpeg failed (\(writeError.map { "\($0)" } ?? "exit \(process.terminationStatus)")): \(arguments.joined(separator: " "))")
+    }
 }
 
 let app = NSApplication.shared
@@ -76,9 +81,9 @@ runFFmpeg([
     "-c:a", "aac", "-b:a", "160k", "-shortest", "-movflags", "+faststart", videoURL.path,
 ]) { handle in
     for frame in 0..<frames {
-        autoreleasepool {
+        try autoreleasepool {
             storyboard.draw(Double(frame) / fps)
-            handle.write(canvas.pixels)
+            try handle.write(contentsOf: canvas.pixels)
         }
         if frame % 150 == 0 { print("Frame \(frame)/\(frames) (\(Int(Date().timeIntervalSince(started))) s)") }
     }
