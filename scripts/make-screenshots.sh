@@ -9,6 +9,9 @@ OUT="${1:-docs/images}"
 swift build --product BiuBiu
 BIN_DIR="$(swift build --show-bin-path)"
 # Localized strings are looked up next to a bare executable.
-cp -R Resources/en.lproj Resources/zh-Hans.lproj "$BIN_DIR/"
-"$BIN_DIR/BiuBiu" --screenshots "$OUT" -AppleLanguages '(zh-Hans)'
-"$BIN_DIR/BiuBiu" --screenshots "$OUT" -AppleLanguages '(en)'
+cp -R Resources/*.lproj "$BIN_DIR/"
+# One set per language the app ships (Resources/*.lproj), named panel-<language>.jpg and so on.
+for lproj in Resources/*.lproj; do
+  language="$(basename "$lproj" .lproj)"
+  "$BIN_DIR/BiuBiu" --screenshots "$OUT" -AppleLanguages "($language)"
+done
