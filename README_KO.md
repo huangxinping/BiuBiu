@@ -2,7 +2,7 @@
 
 [English](README.md) · [简体中文](README_CN.md) · [繁體中文](README_TW.md) · [日本語](README_JA.md) · **한국어** · [Deutsch](README_DE.md) · [Français](README_FR.md) · [Español](README_ES.md) · [Português (Brasil)](README_PT-BR.md) · [Русский](README_RU.md)
 
-BiuBiu는 macOS 메뉴 막대에 머무는 최근 파일 빠른 접근 앱입니다. 단축키(기본값 `⌥⌘R`)를 누르면 최근에 열거나 저장하거나 다운로드한 파일과 폴더, 최근 설치한 앱, 방금 연결한 외장 디스크가 표시됩니다. 전체 화면 앱에서도 불러올 수 있습니다.
+BiuBiu는 macOS 메뉴 막대에 머무는 최근 파일 빠른 접근 앱입니다. 단축키(기본값 `⌥⌘R`)를 누르면 최근에 열거나 저장하거나 다운로드한 파일과 폴더, 최근 열거나 설치한 앱, 방금 연결한 외장 디스크가 표시됩니다. 전체 화면 앱에서도 불러올 수 있습니다.
 
 - Spotlight 인덱스를 기반으로 모든 처리를 Mac 안에서 하며 네트워크를 쓰지 않습니다
 - 클릭해서 열기, `⌘↩`로 Finder에서 보기, 스페이스 또는 `⌘Y`로 훑어보기, 다른 앱으로 바로 드래그

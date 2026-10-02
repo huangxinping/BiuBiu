@@ -37,17 +37,37 @@ package enum ActivityClassifier {
     /// A write this long after a download arrived is a later edit, not the download finishing.
     package static let downloadWindow: TimeInterval = 3600
 
+    /// Whether `isDownload` will need `contentCreated`: only a file with a download source that was saved
+    /// somewhere other than Downloads. Sources ask before paying for a stat.
+    package static func needsCreationDate(path: String, whereFroms: [String], downloadsPath: String) -> Bool {
+        !whereFroms.isEmpty && !path.hasPrefix(downloadsPrefix(downloadsPath))
+    }
+
+    private static func downloadsPrefix(_ downloadsPath: String) -> String {
+        downloadsPath.hasSuffix("/") ? downloadsPath : downloadsPath + "/"
+    }
+
     /// Turns Spotlight metadata into an activity, or nil when nothing happened since `since`.
-    package static func classify(_ m: FileMetadata, since: Date, downloadsPath: String) -> ActivityItem? {
-        let downloadsPrefix = downloadsPath.hasSuffix("/") ? downloadsPath : downloadsPath + "/"
+    /// Dates after `now` (plus a little clock jitter) are bad data and are ignored, so a file whose
+    /// modification date is years ahead still shows up when it is really opened.
+    package static func classify(_ m: FileMetadata, since: Date, downloadsPath: String, now: Date = Date()) -> ActivityItem? {
+        var m = m
+        let latestPlausible = now.addingTimeInterval(tieTolerance)
+        func plausible(_ date: Date?) -> Date? { date.flatMap { $0 <= latestPlausible ? $0 : nil } }
+        m.lastUsed = plausible(m.lastUsed)
+        m.contentModified = plausible(m.contentModified)
+        m.dateAdded = plausible(m.dateAdded)
+
+        let downloadsPrefix = downloadsPrefix(downloadsPath)
         // Order is the tie-break priority: added (or downloaded) beats saved beats opened.
         let download = m.dateAdded != nil && isDownload(m, downloadsPrefix: downloadsPrefix)
         var candidates: [(ActivityEvent, Date)] = []
         if let added = m.dateAdded {
-            if download {
+            // Folders are only ever opened or added; one in Downloads still belongs to that category.
+            if download, !m.isFolder {
                 // Browsers rename "x.crdownload" in place, so date-added marks the start of the download
                 // and the last write marks its end.
-                let finished = m.isFolder ? nil : m.contentModified.flatMap { modified in
+                let finished = m.contentModified.flatMap { modified in
                     modified > added && modified.timeIntervalSince(added) <= downloadWindow ? modified : nil
                 }
                 candidates.append((.downloaded, finished ?? added))

@@ -1,7 +1,7 @@
 import Foundation
 
 package enum PanelCommand: Equatable, Sendable {
-    case moveDown, moveUp, open, reveal, escape, quickLook, togglePin, copyPath, openSettings
+    case moveDown, moveUp, open, reveal, clearSearch, close, quickLook, togglePin, copyPath, openSettings
     /// Zero-based index into the visible categories.
     case selectCategory(Int)
 }
@@ -17,7 +17,8 @@ package enum PanelKeyMap {
         case (126, []): .moveUp
         case (36, []), (76, []): .open
         case (36, [.command]), (76, [.command]): .reveal
-        case (53, []): .escape
+        // Esc clears the search first, and closes the panel once there is nothing to clear.
+        case (53, []): searchIsEmpty ? .close : .clearSearch
         // Space previews only when there is nothing to type into; "季度 汇报" must still search.
         case (49, []) where searchIsEmpty: .quickLook
         case (16, [.command]): .quickLook

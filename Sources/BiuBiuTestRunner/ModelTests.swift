@@ -45,5 +45,12 @@ enum ModelTests {
             expectEqual(all.filter(ActivityCategory.apps.includes), [app])
             expectEqual(all.filter(ActivityCategory.volumes.includes), [dated, undated])
         },
+        TestCase("Model: an opened app shows under Apps but not in All") {
+            let launched = item("/Applications/Safari.app", kind: .application, event: .opened)
+            let installed = item("/Applications/X.app", kind: .application, event: .installed)
+            expect(ActivityCategory.apps.includes(launched))
+            expect(!ActivityCategory.all.includes(launched))
+            expect(ActivityCategory.all.includes(installed))
+        },
     ] }
 }

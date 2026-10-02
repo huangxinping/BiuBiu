@@ -13,4 +13,4 @@ jobs:
       - name: Build
         run: swift build -Xswiftc -warnings-as-errors
       - name: Test
-        run: swift run BiuBiuTestRunner
+        run: "$(swift build --show-bin-path)/BiuBiuTestRunner"

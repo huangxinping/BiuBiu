@@ -2,7 +2,7 @@
 
 [English](README.md) · [简体中文](README_CN.md) · **繁體中文** · [日本語](README_JA.md) · [한국어](README_KO.md) · [Deutsch](README_DE.md) · [Français](README_FR.md) · [Español](README_ES.md) · [Português (Brasil)](README_PT-BR.md) · [Русский](README_RU.md)
 
-BiuBiu 是常駐 macOS 選單列的近期檔案快速存取工具。按下快速鍵（預設 `⌥⌘R`），就能看到最近打開、儲存、下載的檔案和檔案夾，以及最近安裝的應用程式和剛接上的外接磁碟。全螢幕 App 中也能叫出。
+BiuBiu 是常駐 macOS 選單列的近期檔案快速存取工具。按下快速鍵（預設 `⌥⌘R`），就能看到最近打開、儲存、下載的檔案和檔案夾，以及最近打開或安裝的應用程式和剛接上的外接磁碟。全螢幕 App 中也能叫出。
 
 - 以 Spotlight 索引為基礎，全部在本機處理，不連網
 - 按一下打開；`⌘↩` 在 Finder 中顯示；空白鍵或 `⌘Y` 快速查看；直接拖到其他 App

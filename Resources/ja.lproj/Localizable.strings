@@ -79,8 +79,6 @@
 "Click the menu bar icon to open it." = "メニューバーのアイコンをクリックして開きます。";
 "Get Started" = "はじめる";
 "macOS may ask whether BiuBiu can access your Desktop, Documents or Downloads folder. Click Allow so those files can appear in the list." = "macOS が、BiuBiu に「デスクトップ」「書類」「ダウンロード」フォルダへのアクセスを許可するか尋ねることがあります。これらのフォルダのファイルを一覧に表示するには「許可」をクリックしてください。";
-"To list files from your Desktop, Documents and Downloads, BiuBiu needs Full Disk Access. Turn on BiuBiu in the list that opens." = "「デスクトップ」「書類」「ダウンロード」のファイルを一覧表示するには、BiuBiu にフルディスクアクセスが必要です。開いたリストで BiuBiu をオンにしてください。";
-"Open Privacy Settings…" = "プライバシー設定を開く…";
 "Space" = "スペース";
 "Language:" = "言語：";
 "System Default" = "システムの設定に従う";
@@ -91,3 +89,4 @@
 "Desktop" = "デスクトップ";
 "Documents" = "書類";
 "BiuBiu isn’t allowed to read %@, so those files are missing. Click to allow it in System Settings." = "BiuBiu には%@を読み取る許可がないため、そのファイルは表示されません。クリックしてシステム設定で許可してください。";
+"Couldn’t open “%@”" = "「%@」を開けませんでした";

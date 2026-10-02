@@ -12,7 +12,7 @@ enum DumpMode {
         var status = SpotlightStatus.searching
         fileSource.onStatus = { status = $0 }
         let since = Date().addingTimeInterval(-Double(settings.timeWindowDays) * 86_400)
-        let sources: [ActivitySource] = [fileSource, AppInstallSource(), VolumeSource()]
+        let sources: [ActivitySource] = [fileSource, AppSource(), VolumeSource()]
         for source in sources {
             source.start(since: since) { store.update(sourceID: source.id, items: $0) }
         }

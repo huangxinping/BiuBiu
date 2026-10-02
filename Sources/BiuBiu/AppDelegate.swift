@@ -6,7 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = AppSettings(defaults: .standard)
     private let pinStore = PinStore(fileURL: PinStore.defaultFileURL())
     private let fileSource = SpotlightFileSource()
-    private let appSource = AppInstallSource()
+    private let appSource = AppSource()
     private let volumeSource = VolumeSource()
     private let hotKeys = HotKeyCenter()
     private lazy var store = ActivityStore(ignoreRules: settings.ignoreRules,
@@ -48,7 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fileSource.onStatus = { [weak panelViewController] status in panelViewController?.spotlightStatus = status }
         store.onChange = { [weak panelViewController] in panelViewController?.storeDidChange() }
 
-        applyHotKey()
+        applyHotKey(retryIfTaken: true)
         // On first run, start reading folders only after the welcome window has explained the macOS
         // access prompts that reading them can trigger.
         if settings.hasSeenWelcome { startSources() } else { showWelcome() }
@@ -122,8 +122,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Settings changes
 
+    /// `retryIfTaken` covers a restart: the copy being replaced can still own the shortcut for a moment.
     @discardableResult
-    private func applyHotKey() -> Bool {
+    private func applyHotKey(retryIfTaken: Bool = false) -> Bool {
         hotKeys.unregister()
         guard let combo = settings.hotKey else {
             hotKeyWorking = true
@@ -131,7 +132,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return true
         }
         let ok = hotKeys.register(combo) { [weak self] in self?.togglePanel(fromStatusItem: false) }
-        if !ok { Log.app.error("Could not register shortcut \(combo.displayString, privacy: .public)") }
+        if !ok {
+            Log.app.error("Could not register shortcut \(combo.displayString, privacy: .public)")
+            if retryIfTaken {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { [weak self] in
+                    MainActor.assumeIsolated { _ = self?.applyHotKey() }
+                }
+            }
+        }
         hotKeyWorking = ok
         panelController?.viewController.hotKeyDisplay = ok ? combo.localizedDisplayString : nil
         return ok
@@ -147,28 +155,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panelController?.hide()
         if settingsWindow == nil {
             let general = GeneralSettingsViewController(settings: settings, hotKeyWorking: hotKeyWorking, callbacks: .init(
-                hotKeyChanged: { [weak self] combo in
-                    guard let self else { return false }
-                    self.settings.hotKey = combo
-                    return self.applyHotKey()
-                },
+                hotKeyChanged: { [weak self] in self?.applyHotKey() ?? false },
                 hotKeyRecording: { [weak self] recording in
                     if recording { self?.hotKeys.unregister() } else { self?.applyHotKey() }
                 },
-                timeWindowChanged: { [weak self] days in
+                timeWindowChanged: { [weak self] in
                     guard let self else { return }
-                    self.settings.timeWindowDays = days
-                    self.store.timeWindowDays = days
+                    self.store.timeWindowDays = self.settings.timeWindowDays
                     self.startSources()
                 },
-                hiddenCategoriesChanged: { [weak self] hidden in
-                    guard let self else { return }
-                    self.settings.hiddenCategories = hidden
-                    self.panelController?.viewController.reloadCategories()
-                },
-                languageChanged: { [weak self] code in
-                    self?.settings.languageOverride = code
-                }
+                hiddenCategoriesChanged: { [weak self] in self?.panelController?.viewController.reloadCategories() }
             ))
             let ignore = IgnoreRulesViewController(rules: settings.ignoreRules) { [weak self] rules in
                 self?.setIgnoreRules(rules)
@@ -180,9 +176,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showWelcome() {
         settings.hasSeenWelcome = true
-        // Set from docs/superpowers/notes/2026-10-01-privacy-probe.md (Task 1).
-        welcomeWindow = WelcomeWindowController(shortcut: settings.hotKey?.localizedDisplayString,
-                                                privacyNote: .expectPrompts) { [weak self] in
+        welcomeWindow = WelcomeWindowController(shortcut: hotKeyWorking ? settings.hotKey?.localizedDisplayString : nil) { [weak self] in
             self?.welcomeWindow = nil
             self?.startSources()
         }

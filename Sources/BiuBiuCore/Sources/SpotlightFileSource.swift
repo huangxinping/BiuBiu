@@ -8,6 +8,9 @@ package final class SpotlightFileSource: ActivitySource {
     private let runner = MetadataQueryRunner()
     private let downloadsPath: String
     private let userApplicationsPath: String
+    /// Creation dates already read from disk, keyed by path; a changed date-added means a new file at
+    /// that path. Spotlight sends a fresh batch every half second, and the stat is on the main thread.
+    private var creationDates: [String: (dateAdded: Date?, created: Date?)] = [:]
 
     /// Everything `item(from:since:downloadsPath:)` and the app check read, collected by the query.
     private static let attributes = [
@@ -33,14 +36,17 @@ package final class SpotlightFileSource: ActivitySource {
             predicate: predicate,
             scopes: [NSMetadataQueryUserHomeScope],
             attributes: Self.attributes,
-            onResults: { records in
+            onResults: { [weak self] records in
+                let now = Date()
                 onUpdate(records.compactMap { record in
                     if Self.isLeftToAppSource(contentType: record.string(NSMetadataItemContentTypeKey),
                                               path: record.path,
                                               userApplicationsPath: userApplicationsPath) {
                         return nil
                     }
-                    return Self.item(from: record, since: since, downloadsPath: downloadsPath)
+                    return Self.item(from: record, since: since, now: now, downloadsPath: downloadsPath) { path, dateAdded in
+                        self?.creationDate(atPath: path, dateAdded: dateAdded) ?? Self.fileCreationDate(atPath: path)
+                    }
                 })
             },
             onStatus: { [weak self] status in self?.onStatus?(status) }
@@ -48,6 +54,13 @@ package final class SpotlightFileSource: ActivitySource {
     }
 
     package func stop() { runner.stop() }
+
+    private func creationDate(atPath path: String, dateAdded: Date?) -> Date? {
+        if let cached = creationDates[path], cached.dateAdded == dateAdded { return cached.created }
+        let created = Self.fileCreationDate(atPath: path)
+        creationDates[path] = (dateAdded, created)
+        return created
+    }
 
     /// The file system's creation date, read from the file itself: Spotlight does not provide
     /// kMDItemFSCreationDate on every Mac. Only called for the few files that need it.
@@ -61,20 +74,21 @@ package final class SpotlightFileSource: ActivitySource {
         contentType == "com.apple.application-bundle" && path?.hasPrefix(userApplicationsPath) == true
     }
 
-    private static func item(from record: MetadataRecord, since: Date, downloadsPath: String) -> ActivityItem? {
+    private static func item(from record: MetadataRecord, since: Date, now: Date, downloadsPath: String,
+                             creationDate: (String, Date?) -> Date?) -> ActivityItem? {
         let whereFroms = record.strings(NSMetadataItemWhereFromsKey)
-        // Only a download saved outside Downloads needs its creation date (see ActivityClassifier).
-        let needsCreation = !whereFroms.isEmpty && !record.path.hasPrefix(downloadsPath + "/")
+        let dateAdded = record.date(NSMetadataItemDateAddedKey)
+        let needsCreation = ActivityClassifier.needsCreationDate(path: record.path, whereFroms: whereFroms, downloadsPath: downloadsPath)
         let metadata = FileMetadata(
             path: record.path,
             isFolder: record.string(NSMetadataItemContentTypeKey) == "public.folder",
             lastUsed: record.date(NSMetadataItemLastUsedDateKey),
             // The file system's creation date: kMDItemContentCreationDate can come from EXIF or PDF metadata.
-            contentCreated: needsCreation ? Self.fileCreationDate(atPath: record.path) : nil,
+            contentCreated: needsCreation ? creationDate(record.path, dateAdded) : nil,
             contentModified: record.date(NSMetadataItemContentModificationDateKey),
-            dateAdded: record.date(NSMetadataItemDateAddedKey),
+            dateAdded: dateAdded,
             whereFroms: whereFroms
         )
-        return ActivityClassifier.classify(metadata, since: since, downloadsPath: downloadsPath)
+        return ActivityClassifier.classify(metadata, since: since, downloadsPath: downloadsPath, now: now)
     }
 }

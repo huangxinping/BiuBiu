@@ -137,10 +137,12 @@ extension IgnoreRulesViewController: NSTableViewDataSource, NSTableViewDelegate,
         let row = tableView.row(for: field)
         guard rules.rules.indices.contains(row) else { return }
         let value = field.stringValue.trimmingCharacters(in: .whitespaces)
-        if value.isEmpty {
+        let edited = rules.rules[row].withValue(value)
+        let duplicate = rules.rules.enumerated().contains { $0.offset != row && $0.element == edited }
+        if value.isEmpty || duplicate {
             rules.rules.remove(at: row)
         } else {
-            rules.rules[row] = rules.rules[row].withValue(value)
+            rules.rules[row] = edited
         }
         commit()
     }

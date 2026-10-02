@@ -79,8 +79,6 @@
 "Click the menu bar icon to open it." = "Clique no ícone da barra de menus para abri-lo.";
 "Get Started" = "Começar";
 "macOS may ask whether BiuBiu can access your Desktop, Documents or Downloads folder. Click Allow so those files can appear in the list." = "O macOS pode perguntar se o BiuBiu pode acessar suas pastas Mesa, Documentos ou Downloads. Clique em Permitir para que os arquivos delas apareçam na lista.";
-"To list files from your Desktop, Documents and Downloads, BiuBiu needs Full Disk Access. Turn on BiuBiu in the list that opens." = "Para listar os arquivos da Mesa, de Documentos e de Downloads, o BiuBiu precisa de Acesso Total ao Disco. Ative o BiuBiu na lista que será aberta.";
-"Open Privacy Settings…" = "Abrir ajustes de privacidade…";
 "Space" = "Espaço";
 "Language:" = "Idioma:";
 "System Default" = "Idioma do sistema";
@@ -91,3 +89,4 @@
 "Desktop" = "Mesa";
 "Documents" = "Documentos";
 "BiuBiu isn’t allowed to read %@, so those files are missing. Click to allow it in System Settings." = "O BiuBiu não tem permissão para ler %@, então esses arquivos não aparecem. Clique para permitir nos Ajustes do Sistema.";
+"Couldn’t open “%@”" = "Não foi possível abrir “%@”";

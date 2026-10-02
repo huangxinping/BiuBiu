@@ -12,9 +12,7 @@ final class Assets {
             var rect: CGRect { CGRect(x: frame[0], y: frame[1], width: frame[2], height: frame[3]) }
         }
         let size: [CGFloat]
-        let hotKey: String
         let searchField: [CGFloat]
-        let segments: [CGFloat]
         let states: [String: [Row]]
     }
 

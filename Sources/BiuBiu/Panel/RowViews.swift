@@ -91,4 +91,9 @@ final class ItemCellView: NSTableCellView {
     }
 
     @objc private func accessoryClicked() { onAccessory?() }
+
+    /// The visible button's frame in `view`, for the capture modes.
+    func accessoryFrame(in view: NSView) -> NSRect? {
+        accessoryButton.isHidden ? nil : accessoryButton.convert(accessoryButton.bounds, to: view)
+    }
 }

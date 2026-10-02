@@ -1,92 +1,25 @@
 import AppKit
 import BiuBiuCore
 
-/// `BiuBiu --screenshots <dir>` renders the README screenshots from made-up demo files, offscreen, so no
-/// one's real files end up in a picture. Spotlight is not used. Run it through scripts/make-screenshots.sh.
+/// `BiuBiu --screenshots <dir>` renders the README screenshots from DemoFixture's made-up files, offscreen.
+/// Run it through scripts/make-screenshots.sh.
 @MainActor
 enum ScreenshotMode {
-    private struct DemoFile {
-        let path: String
-        let zh: String
-        let en: String
-    }
-
     static func run(outputDirectory: URL) -> Never {
         let app = NSApplication.shared
         app.setActivationPolicy(.accessory)
-        let language = RelativeTime.localization
-        let suffix = language
-        /// Demo names: Simplified and Traditional Chinese get their own, everything else uses English names.
-        func name(_ zh: String, _ tw: String, _ en: String) -> String {
-            language == "zh-Hans" ? zh : language == "zh-Hant" ? tw : en
-        }
-        let demo = FileManager.default.temporaryDirectory.appendingPathComponent("BiuBiuDemo-\(UUID().uuidString)")
+        let suffix = RelativeTime.localization
         try? FileManager.default.createDirectory(at: outputDirectory, withIntermediateDirectories: true)
 
-        // Demo files on disk give real Finder icons; their names are invented.
-        func file(_ folder: String, _ zh: String, _ tw: String, _ en: String, folderItem: Bool = false) -> URL {
-            let url = demo.appendingPathComponent(folder).appendingPathComponent(name(zh, tw, en))
-            if folderItem {
-                try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
-            } else {
-                try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-                FileManager.default.createFile(atPath: url.path, contents: Data())
-            }
-            return url
-        }
-        let now = Date()
-        func ago(_ minutes: Double) -> Date { now.addingTimeInterval(-minutes * 60) }
-        let website = file("Projects", "官网改版", "官網改版", "Website Redesign", folderItem: true)
-        let budget = file("Documents", "年度预算.xlsx", "年度預算.xlsx", "Annual Budget.xlsx")
-        let items: [ActivityItem] = [
-            ActivityItem(url: file("Downloads", "产品手册-v2.pdf", "產品手冊-v2.pdf", "Product Guide v2.pdf"), kind: .file,
-                         event: .downloaded, date: ago(2), sourceHost: "example.com"),
-            ActivityItem(url: file("Documents", "季度汇报.pptx", "季度匯報.pptx", "Quarterly Review.pptx"), kind: .file,
-                         event: .saved, date: ago(6)),
-            ActivityItem(url: file("Desktop", "设计稿 v3.png", "設計稿 v3.png", "Mockup v3.png"), kind: .file, event: .added, date: ago(18)),
-            ActivityItem(url: URL(fileURLWithPath: "/"), kind: .volume, event: .mounted, date: ago(25),
-                         displayName: name("备份盘", "備份碟", "Backup"), parentName: ""),
-            ActivityItem(url: file("Downloads", "素材包.zip", "素材包.zip", "Assets.zip"), kind: .file,
-                         event: .downloaded, date: ago(41), sourceHost: "files.example.com"),
-            ActivityItem(url: website, kind: .folder, event: .opened, date: ago(95)),
-            ActivityItem(url: file("Documents", "会议纪要.md", "會議紀要.md", "Meeting Notes.md"), kind: .file, event: .opened, date: ago(130)),
-            ActivityItem(url: URL(fileURLWithPath: "/System/Applications/Calculator.app"), kind: .application,
-                         event: .installed, date: ago(60 * 20), displayName: name("计算器", "計算機", "Calculator")),
-            ActivityItem(url: file("Documents", "合同-终版.docx", "合約-終版.docx", "Contract Final.docx"), kind: .file,
-                         event: .saved, date: ago(60 * 24)),
-            ActivityItem(url: file("Downloads", "发票-九月.pdf", "發票-九月.pdf", "Invoice September.pdf"), kind: .file,
-                         event: .downloaded, date: ago(60 * 26), sourceHost: "example.com"),
-        ]
+        let demo = DemoFixture(language: suffix, extended: false)
+        try? demo.pinStore.pin(url: demo.url("Website Redesign"))
+        try? demo.pinStore.pin(url: demo.url("Annual Budget.xlsx"))
+        let (panelController, panel) = demo.makePanel()
+        let store = demo.store
 
-        let settings = AppSettings(defaults: UserDefaults(suiteName: "BiuBiuScreenshots-\(UUID().uuidString)")!)
-        let store = ActivityStore(ignoreRules: settings.ignoreRules, timeWindowDays: 7, homeDirectory: demo.path)
-        store.update(sourceID: "demo", items: items)
-        let pinStore = PinStore(fileURL: demo.appendingPathComponent("pins.json"))
-        try? pinStore.pin(url: website)
-        try? pinStore.pin(url: budget)
-
-        let panelController = PanelViewController(dependencies: .init(
-            store: store, pinStore: pinStore, settings: settings, volumeSource: VolumeSource(),
-            openSettings: {}, close: {}, updateIgnoreRules: { _ in }))
-        // A plain borderless window shows the same content; screencapture cannot grab the nonactivating panel.
-        let panel = NSWindow(contentRect: NSRect(origin: .zero, size: PanelController.panelSize),
-                             styleMask: [.borderless], backing: .buffered, defer: false)
-        panel.backgroundColor = .clear
-        panel.isOpaque = false
-        panel.isReleasedWhenClosed = false
-        panel.contentViewController = panelController
-        panel.setContentSize(PanelController.panelSize)
-        panelController.hotKeyDisplay = HotKeyCombo.defaultToggle.localizedDisplayString
-        panelController.spotlightStatus = .ok
-        offscreen(panel)
-        panelController.willShow()
-        // In-process drawing cannot show the frosted material; a flat material reads closer to the real thing.
-        (panelController.view as? NSVisualEffectView)?.state = .inactive
-
-        let general = GeneralSettingsViewController(settings: settings, hotKeyWorking: true, callbacks: .init(
-            hotKeyChanged: { _ in true }, hotKeyRecording: { _ in }, timeWindowChanged: { _ in },
-            hiddenCategoriesChanged: { _ in }, languageChanged: { _ in }))
-        let ignore = IgnoreRulesViewController(rules: settings.ignoreRules) { _ in }
+        let general = GeneralSettingsViewController(settings: demo.settings, hotKeyWorking: true, callbacks: .init(
+            hotKeyChanged: { true }, hotKeyRecording: { _ in }, timeWindowChanged: {}, hiddenCategoriesChanged: {}))
+        let ignore = IgnoreRulesViewController(rules: demo.settings.ignoreRules) { _ in }
         let settingsWindow = SettingsWindowController(general: general, ignoreRules: ignore).window!
 
         func shoot(after delay: Double, _ work: @escaping @MainActor () -> Void) {
@@ -109,7 +42,7 @@ enum ScreenshotMode {
         shoot(after: 2.4) {
             write(compose(capture(settingsWindow), menuBar: false),
                   to: outputDirectory.appendingPathComponent("settings-\(suffix).jpg"))
-            try? FileManager.default.removeItem(at: demo)
+            demo.cleanUp()
             exit(0)
         }
         app.run()

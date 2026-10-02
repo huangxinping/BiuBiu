@@ -2,7 +2,7 @@
 
 [English](README.md) · [简体中文](README_CN.md) · [繁體中文](README_TW.md) · [日本語](README_JA.md) · [한국어](README_KO.md) · **Deutsch** · [Français](README_FR.md) · [Español](README_ES.md) · [Português (Brasil)](README_PT-BR.md) · [Русский](README_RU.md)
 
-BiuBiu ist eine Menüleisten-App für macOS, die die Dateien und Ordner zeigt, die du zuletzt geöffnet, gesichert oder geladen hast – dazu neu installierte Apps und angeschlossene Volumes. Drücke überall `⌥⌘R` (anpassbar), auch in Apps im Vollbildmodus.
+BiuBiu ist eine Menüleisten-App für macOS, die die Dateien und Ordner zeigt, die du zuletzt geöffnet, gesichert oder geladen hast – dazu zuletzt geöffnete oder installierte Apps und angeschlossene Volumes. Drücke überall `⌥⌘R` (anpassbar), auch in Apps im Vollbildmodus.
 
 - Basiert auf dem Spotlight-Index; alles bleibt auf deinem Mac
 - Klicken zum Öffnen, `⌘↩` zum Zeigen im Finder, Leertaste oder `⌘Y` für die Übersicht, oder Objekte direkt in andere Apps ziehen

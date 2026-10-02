@@ -19,16 +19,13 @@ final class PanelViewController: NSViewController {
     private var transientMessage: String?
     private var messageTask: Task<Void, Never>?
 
-    let searchField = NSSearchField()
-    private let segments = NSSegmentedControl()
-    private let banner = NSTextField(wrappingLabelWithString: "")
-    let tableView = NSTableView()
-    private let scrollView = NSScrollView()
-    private let emptyLabel = NSTextField(labelWithString: "")
-    private let footerLabel = NSTextField(labelWithString: "")
-
-    /// For the promo sprites, which point at the tabs.
-    var segmentsFrameInView: NSRect { segments.convert(segments.bounds, to: view) }
+    private let panelView: PanelView
+    private var searchField: NSSearchField { panelView.searchField }
+    private var segments: NSSegmentedControl { panelView.segments }
+    private var banner: NSTextField { panelView.banner }
+    private var emptyLabel: NSTextField { panelView.emptyLabel }
+    private var footerLabel: NSTextField { panelView.footerLabel }
+    var tableView: NSTableView { panelView.tableView }
 
     var spotlightStatus: SpotlightStatus = .searching { didSet { updateBanner(); updateEmptyState() } }
     /// Protected folders macOS doesn't let BiuBiu read; their files are missing from the list.
@@ -37,95 +34,65 @@ final class PanelViewController: NSViewController {
 
     init(dependencies: Dependencies) {
         deps = dependencies
+        panelView = PanelView(size: PanelController.panelSize, searchPlaceholder: L("Search recent items"),
+                              settingsTitle: L("Settings…"))
         super.init(nibName: nil, bundle: nil)
     }
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
-    // MARK: - Building the view
-
     override func loadView() {
-        let background = NSVisualEffectView(frame: NSRect(origin: .zero, size: PanelController.panelSize))
-        background.material = .popover
-        background.blendingMode = .behindWindow
-        background.state = .active
-        background.wantsLayer = true
-        background.layer?.cornerRadius = 12
-        background.layer?.masksToBounds = true
-
-        searchField.placeholderString = L("Search recent items")
         searchField.target = self
         searchField.action = #selector(searchChanged)
-        searchField.sendsSearchStringImmediately = true
-
-        segments.segmentStyle = .automatic
-        segments.controlSize = .small
-        segments.trackingMode = .selectOne
-        // Equal widths would size every segment like "Downloads" and push the panel past 360 points.
-        segments.segmentDistribution = .fillProportionally
-        segments.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         segments.target = self
         segments.action = #selector(segmentChanged)
-
-        banner.font = .systemFont(ofSize: 11)
-        banner.textColor = .systemOrange
-        banner.isHidden = true
         banner.addGestureRecognizer(NSClickGestureRecognizer(target: self, action: #selector(bannerClicked)))
-
-        let column = NSTableColumn(identifier: .init("main"))
-        tableView.addTableColumn(column)
-        tableView.headerView = nil
-        tableView.style = .plain
-        tableView.backgroundColor = .clear
-        tableView.intercellSpacing = NSSize(width: 0, height: 0)
-        tableView.allowsEmptySelection = true
         tableView.dataSource = self
         tableView.delegate = self
         tableView.target = self
         tableView.action = #selector(rowClicked)
-        tableView.setDraggingSourceOperationMask(.copy, forLocal: false)
-        tableView.menu = NSMenu()
         tableView.menu?.delegate = self
-
-        scrollView.documentView = tableView
-        scrollView.drawsBackground = false
-        scrollView.hasVerticalScroller = true
-        scrollView.autohidesScrollers = true
-
-        emptyLabel.textColor = .secondaryLabelColor
-        emptyLabel.alignment = .center
-        emptyLabel.translatesAutoresizingMaskIntoConstraints = false
-        scrollView.addSubview(emptyLabel)
-
-        footerLabel.font = .systemFont(ofSize: 11)
-        footerLabel.textColor = .secondaryLabelColor
-        let gear = NSButton(image: NSImage(systemSymbolName: "gearshape", accessibilityDescription: L("Settings…"))!,
-                            target: self, action: #selector(settingsClicked))
-        gear.isBordered = false
-        let footer = NSStackView(views: [footerLabel, NSView(), gear])
-
-        let stack = NSStackView(views: [searchField, segments, banner, scrollView, footer])
-        stack.orientation = .vertical
-        stack.alignment = .leading
-        stack.spacing = 8
-        stack.edgeInsets = NSEdgeInsets(top: 12, left: 10, bottom: 8, right: 10)
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        background.addSubview(stack)
-        for view in [searchField, segments, banner, scrollView, footer] {
-            view.widthAnchor.constraint(equalTo: stack.widthAnchor, constant: -20).isActive = true
-        }
-        NSLayoutConstraint.activate([
-            stack.topAnchor.constraint(equalTo: background.topAnchor),
-            stack.bottomAnchor.constraint(equalTo: background.bottomAnchor),
-            stack.leadingAnchor.constraint(equalTo: background.leadingAnchor),
-            stack.trailingAnchor.constraint(equalTo: background.trailingAnchor),
-            emptyLabel.centerXAnchor.constraint(equalTo: scrollView.centerXAnchor),
-            emptyLabel.centerYAnchor.constraint(equalTo: scrollView.centerYAnchor),
-        ])
-        scrollView.setContentHuggingPriority(.defaultLow, for: .vertical)
-        view = background
+        panelView.settingsButton.target = self
+        panelView.settingsButton.action = #selector(settingsClicked)
+        view = panelView
         reloadCategories()
         updateFooter()
+    }
+
+    // MARK: - Capture modes
+
+    struct CaptureLayout {
+        struct Row {
+            let row: PanelRow
+            let frame: NSRect
+            /// The row's button (⏏ for drives), when it shows one.
+            let accessory: NSRect?
+        }
+        let searchField: NSRect
+        let segments: NSRect
+        let rows: [Row]
+    }
+
+    /// Where things are, in the view's coordinates, for `--screenshots` and `--promo-sprites`.
+    func captureLayout() -> CaptureLayout {
+        view.layoutSubtreeIfNeeded()
+        tableView.layoutSubtreeIfNeeded()
+        let rowFrames = rows.indices.map { index in
+            let cell = tableView.view(atColumn: 0, row: index, makeIfNecessary: false) as? ItemCellView
+            return CaptureLayout.Row(row: rows[index], frame: tableView.convert(tableView.rect(ofRow: index), to: view),
+                                     accessory: cell?.accessoryFrame(in: view))
+        }
+        return CaptureLayout(searchField: searchField.convert(searchField.bounds, to: view),
+                             segments: segments.convert(segments.bounds, to: view), rows: rowFrames)
+    }
+
+    func prepareForCapture(hideScroller: Bool) { panelView.prepareForCapture(hideScroller: hideScroller) }
+
+    /// Types into the search field on the panel's behalf.
+    func setSearchText(_ text: String) {
+        searchField.stringValue = text
+        deps.store.searchText = text
+        reload(resetSelection: true, refreshPins: true)
     }
 
     // MARK: - Lifecycle
@@ -157,7 +124,7 @@ final class PanelViewController: NSViewController {
     func reload(resetSelection: Bool, refreshPins: Bool = false) {
         let previous = selectedRow.flatMap { rows.indices.contains($0) ? rows[$0] : nil }
         rows = PanelRowsBuilder.rows(
-            pins: deps.pinStore.entries(refresh: refreshPins),
+            pins: refreshPins ? deps.pinStore.resolveEntries() : deps.pinStore.entries,
             showPinned: deps.store.category == .all,
             pinnedCollapsed: deps.settings.pinnedCollapsed,
             searchText: deps.store.searchText,
@@ -204,13 +171,10 @@ final class PanelViewController: NSViewController {
         case .moveUp: moveSelection(by: -1)
         case .open: openSelected()
         case .reveal: revealSelected()
-        case .escape:
-            if searchField.stringValue.isEmpty {
-                deps.close()
-            } else {
-                searchField.stringValue = ""
-                searchChanged()
-            }
+        case .clearSearch:
+            searchField.stringValue = ""
+            searchChanged()
+        case .close: deps.close()
         case .quickLook: toggleQuickLook()
         case .togglePin: togglePinSelected()
         case .copyPath: copyPathOfSelected()
@@ -260,11 +224,16 @@ final class PanelViewController: NSViewController {
 
     func openSelected() {
         guard let row = selectedPanelRow else { return }
-        guard let url = row.url, ItemActions.open(url) else {
+        guard let url = row.url else { return handleMissing(row) }
+        switch ItemActions.open(url) {
+        case .opened:
+            deps.close()
+        case .missing:
             handleMissing(row)
-            return
+        case .failed:
+            NSSound.beep()
+            showMessage(String(format: L("Couldn’t open “%@”"), row.displayName ?? url.lastPathComponent))
         }
-        deps.close()
     }
 
     func revealSelected() {
@@ -285,11 +254,7 @@ final class PanelViewController: NSViewController {
         case .pinned(let entry):
             deps.pinStore.unpin(path: entry.pin.path)
         case .item(let item):
-            if deps.pinStore.isPinned(path: item.url.path) {
-                deps.pinStore.unpin(path: item.url.path)
-            } else {
-                do { try deps.pinStore.pin(url: item.url) } catch { showMessage(error.localizedDescription) }
-            }
+            do { _ = try deps.pinStore.togglePin(url: item.url) } catch { showMessage(error.localizedDescription) }
         case .pinnedHeader, .sectionHeader:
             return
         }
@@ -331,21 +296,24 @@ final class PanelViewController: NSViewController {
         }
     }
 
-    private var showsFolderAccessBanner: Bool { transientMessage == nil && !blockedFolders.isEmpty }
+    private var currentBanner: PanelStatusText.Banner? {
+        PanelStatusText.banner(transient: transientMessage, blockedFolders: blockedFolders, spotlight: spotlightStatus)
+    }
 
     private func updateBanner() {
-        let spotlightProblem = spotlightStatus == .noResults || spotlightStatus == .failedToStart
-        let text = transientMessage
-            ?? (blockedFolders.isEmpty ? nil : folderAccessMessage)
-            ?? (spotlightProblem
-                ? L("Spotlight found nothing in your home folder. It may be excluded from indexing — check System Settings › Spotlight.")
-                : nil)
+        let text: String? = switch currentBanner {
+        case .message(let message): message
+        case .folderAccess(let folders): folderAccessMessage(folders)
+        case .spotlightProblem:
+            L("Spotlight found nothing in your home folder. It may be excluded from indexing — check System Settings › Spotlight.")
+        case nil: nil
+        }
         banner.stringValue = text ?? ""
         banner.isHidden = text == nil
     }
 
-    private var folderAccessMessage: String {
-        let names = blockedFolders.map { folder in
+    private func folderAccessMessage(_ folders: [ProtectedFolder]) -> String {
+        let names = folders.map { folder in
             switch folder {
             case .desktop: L("Desktop")
             case .documents: L("Documents")
@@ -359,19 +327,19 @@ final class PanelViewController: NSViewController {
     }
 
     @objc private func bannerClicked() {
-        guard showsFolderAccessBanner else { return }
+        guard case .folderAccess = currentBanner else { return }
         deps.close()
         AppInfo.openFolderAccessSettings()
     }
 
     private func updateEmptyState() {
-        emptyLabel.isHidden = !rows.isEmpty
-        if !deps.store.searchText.isEmpty {
-            emptyLabel.stringValue = L("No matches")
-        } else if spotlightStatus == .searching {
-            emptyLabel.stringValue = L("Loading…")
-        } else {
-            emptyLabel.stringValue = L("Nothing recent yet")
+        let state = PanelStatusText.emptyState(rowCount: rows.count, searchText: deps.store.searchText, spotlight: spotlightStatus)
+        emptyLabel.isHidden = state == nil
+        emptyLabel.stringValue = switch state {
+        case .noMatches: L("No matches")
+        case .loading: L("Loading…")
+        case .nothingYet: L("Nothing recent yet")
+        case nil: ""
         }
     }
 

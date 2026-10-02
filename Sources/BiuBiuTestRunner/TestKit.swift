@@ -1,5 +1,10 @@
 import Foundation
 
+/// Thrown by a test that cannot run here (no Spotlight index, say); it is reported, not counted as passed.
+struct SkipTest: Error {
+    let reason: String
+}
+
 struct TestCase {
     let name: String
     let body: @MainActor () throws -> Void
@@ -22,10 +27,18 @@ enum TestKit {
     /// Runs the tests whose names contain `filter` (all when nil). Returns the number of failed tests.
     static func run(_ tests: [TestCase], filter: String?) -> Int {
         let selected = tests.filter { filter == nil || $0.name.contains(filter!) }
-        var failed = 0
+        var failed = 0, skipped = 0
         for test in selected {
             currentFailures = []
-            do { try test.body() } catch { currentFailures.append("    threw: \(error)") }
+            do {
+                try test.body()
+            } catch let skip as SkipTest {
+                skipped += 1
+                print("– \(test.name) (skipped: \(skip.reason))")
+                continue
+            } catch {
+                currentFailures.append("    threw: \(error)")
+            }
             if currentFailures.isEmpty {
                 print("✓ \(test.name)")
             } else {
@@ -34,7 +47,7 @@ enum TestKit {
                 currentFailures.forEach { print($0) }
             }
         }
-        print("\n\(selected.count - failed) passed, \(failed) failed")
+        print("\n\(selected.count - failed - skipped) passed, \(skipped) skipped, \(failed) failed")
         return failed
     }
 }

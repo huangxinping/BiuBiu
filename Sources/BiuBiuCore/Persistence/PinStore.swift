@@ -32,6 +32,7 @@ package final class PinStore {
     package private(set) var pins: [Pin] = []
     private let fileURL: URL
     private var cachedEntries: [PinnedEntry]?
+    private var saveBlocked = false
     private let now: () -> Date
 
     package static func defaultFileURL() -> URL {
@@ -49,7 +50,26 @@ package final class PinStore {
         pins.contains { $0.path == path }
     }
 
+    /// Pins the file, or does nothing when it already is (under this or an earlier name).
     package func pin(url: URL) throws {
+        resolveEntries()
+        try addPin(url: url)
+    }
+
+    /// Pins the file if it is not pinned, unpins it if it is. Returns whether it is pinned afterwards.
+    /// Resolves the pins first so a file renamed in Finder is recognized under its new name.
+    package func togglePin(url: URL) throws -> Bool {
+        resolveEntries()
+        let path = url.standardizedFileURL.path
+        if isPinned(path: path) {
+            unpin(path: path)
+            return false
+        }
+        try addPin(url: url)
+        return true
+    }
+
+    private func addPin(url: URL) throws {
         let path = url.standardizedFileURL.path
         guard !isPinned(path: path) else { return }
         let bookmark = try url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
@@ -64,10 +84,13 @@ package final class PinStore {
         save()
     }
 
-    /// Every pin, oldest first. `refresh` resolves the bookmarks again (following moves); otherwise the last
-    /// resolution is reused, so typing in the search field does not touch the disk for every pin.
-    package func entries(refresh: Bool = true) -> [PinnedEntry] {
-        if !refresh, let cachedEntries { return cachedEntries }
+    /// Every pin, oldest first, as last resolved, so typing in the search field does not touch the disk
+    /// for every pin. Resolves them once when nothing has been resolved yet.
+    package var entries: [PinnedEntry] { cachedEntries ?? resolveEntries() }
+
+    /// Resolves every bookmark again, following moves and renames, and saves any new paths it finds.
+    @discardableResult
+    package func resolveEntries() -> [PinnedEntry] {
         var changed = false
         let result = pins.indices.map { index -> PinnedEntry in
             var pin = pins[index]
@@ -100,7 +123,16 @@ package final class PinStore {
     }
 
     private func load() {
-        guard let data = try? Data(contentsOf: fileURL) else { return }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        let data: Data
+        do {
+            data = try Data(contentsOf: fileURL)
+        } catch {
+            // The pins are there but unreadable right now; saving would replace them with an empty list.
+            saveBlocked = true
+            Log.persistence.error("pins.json could not be read, pins will not be saved this session: \(error.localizedDescription, privacy: .public)")
+            return
+        }
         do {
             pins = try JSONDecoder().decode([Pin].self, from: data)
         } catch {
@@ -113,6 +145,7 @@ package final class PinStore {
     }
 
     private func save() {
+        guard !saveBlocked else { return }
         do {
             try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             let encoder = JSONEncoder()

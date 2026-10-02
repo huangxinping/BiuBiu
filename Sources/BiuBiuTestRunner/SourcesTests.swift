@@ -19,13 +19,17 @@ enum SourcesTests {
             // ~23k recent items, on the main thread, so clicks and the shortcut did nothing.
             let source = SpotlightFileSource()
             var items: [ActivityItem]?
+            var status = SpotlightStatus.searching
+            source.onStatus = { status = $0 }
             let start = Date()
             source.start(since: start.addingTimeInterval(-7 * 86_400)) { items = $0 }
-            while items == nil, Date().timeIntervalSince(start) < 15 {
+            while items == nil, status != .noResults, Date().timeIntervalSince(start) < 15 {
                 RunLoop.main.run(until: Date().addingTimeInterval(0.05))
             }
             source.stop()
             let elapsed = Date().timeIntervalSince(start)
+            // An unindexed home folder (a CI runner) is not a regression; a slow one is.
+            if status == .noResults { throw SkipTest(reason: "this Mac's home folder is not in the Spotlight index") }
             expect(items != nil, "no results after \(Int(elapsed)) s")
             expect(elapsed < 10, "first results took \(String(format: "%.1f", elapsed)) s")
         },
@@ -45,8 +49,7 @@ enum SourcesTests {
             }
             runner.stop()
             guard let records, !records.isEmpty else {
-                print("    skipped: Spotlight returned nothing for /System/Applications")
-                return
+                throw SkipTest(reason: "Spotlight returned nothing for /System/Applications")
             }
             expect(records.allSatisfy { $0.path.hasPrefix("/System/Applications/") && $0.path.hasSuffix(".app") },
                    "a record is missing its path")
@@ -54,6 +57,24 @@ enum SourcesTests {
                    "content type was not collected")
             expect(records.allSatisfy { $0.string(NSMetadataItemCFBundleIdentifierKey)?.isEmpty == false },
                    "bundle identifier was not collected")
+        },
+        TestCase("Apps: the newer of installed and opened wins, a tie goes to installed") {
+            let since = Date(timeIntervalSince1970: 1_000), now = since.addingTimeInterval(10_000)
+            func at(_ s: TimeInterval) -> Date { since.addingTimeInterval(s) }
+            let opened = AppSource.item(path: "/Applications/Figma.app", dateAdded: at(10), lastUsed: at(500), since: since, now: now)
+            expectEqual(opened?.event, .opened)
+            expectEqual(opened?.date, at(500))
+            expectEqual(opened?.displayName, "Figma")
+            expectEqual(opened?.kind, .application)
+            let updated = AppSource.item(path: "/Applications/Figma.app", dateAdded: at(900), lastUsed: at(500), since: since, now: now)
+            expectEqual(updated?.event, .installed)
+            let tie = AppSource.item(path: "/Applications/Figma.app", dateAdded: at(500), lastUsed: at(501), since: since, now: now)
+            expectEqual(tie?.event, .installed)
+            expect(AppSource.item(path: "/Applications/Old.app", dateAdded: at(-5), lastUsed: at(-9), since: since, now: now) == nil)
+            expect(AppSource.item(path: "/Applications/Never.app", dateAdded: nil, lastUsed: nil, since: since, now: now) == nil)
+            // A last-used date in the future is ignored; the install still counts.
+            let future = AppSource.item(path: "/Applications/F.app", dateAdded: at(10), lastUsed: at(99_999_999), since: since, now: now)
+            expectEqual(future?.event, .installed)
         },
         TestCase("Sources: apps in ~/Applications are left to the app source, others stay files") {
             let apps = "/Users/me/Applications/"

@@ -79,8 +79,6 @@
 "Click the menu bar icon to open it." = "按一下選單列圖像即可打開。";
 "Get Started" = "開始使用";
 "macOS may ask whether BiuBiu can access your Desktop, Documents or Downloads folder. Click Allow so those files can appear in the list." = "macOS 可能會詢問是否允許 BiuBiu 取用「桌面」「文件」或「下載項目」檔案夾。請按「允許」，這些檔案夾中的檔案才會出現在列表中。";
-"To list files from your Desktop, Documents and Downloads, BiuBiu needs Full Disk Access. Turn on BiuBiu in the list that opens." = "若要列出「桌面」「文件」和「下載項目」中的檔案，BiuBiu 需要「完整磁碟取用權限」。請在打開的列表中開啟 BiuBiu。";
-"Open Privacy Settings…" = "打開隱私權設定…";
 "Space" = "空白鍵";
 "Language:" = "語言：";
 "System Default" = "跟隨系統";
@@ -91,3 +89,4 @@
 "Desktop" = "桌面";
 "Documents" = "文件";
 "BiuBiu isn’t allowed to read %@, so those files are missing. Click to allow it in System Settings." = "BiuBiu 沒有讀取%@的權限，其中的檔案不會顯示。按一下這裡在系統設定中允許。";
+"Couldn’t open “%@”" = "無法打開「%@」";

@@ -66,7 +66,25 @@ enum PanelTests {
             expectEqual(PanelKeyMap.command(keyCode: 126, modifiers: [], searchIsEmpty: false), .moveUp)
             expectEqual(PanelKeyMap.command(keyCode: 36, modifiers: [], searchIsEmpty: false), .open)
             expectEqual(PanelKeyMap.command(keyCode: 76, modifiers: [.command], searchIsEmpty: false), .reveal)
-            expectEqual(PanelKeyMap.command(keyCode: 53, modifiers: [], searchIsEmpty: false), .escape)
+            expectEqual(PanelKeyMap.command(keyCode: 53, modifiers: [], searchIsEmpty: false), .clearSearch)
+            expectEqual(PanelKeyMap.command(keyCode: 53, modifiers: [], searchIsEmpty: true), .close)
+        },
+        TestCase("Status text: a message beats blocked folders, which beat a Spotlight problem") {
+            expectEqual(PanelStatusText.banner(transient: "Path copied", blockedFolders: [.desktop], spotlight: .noResults),
+                        .message("Path copied"))
+            expectEqual(PanelStatusText.banner(transient: nil, blockedFolders: [.desktop, .downloads], spotlight: .noResults),
+                        .folderAccess([.desktop, .downloads]))
+            expectEqual(PanelStatusText.banner(transient: nil, blockedFolders: [], spotlight: .noResults), .spotlightProblem)
+            expectEqual(PanelStatusText.banner(transient: nil, blockedFolders: [], spotlight: .failedToStart), .spotlightProblem)
+            expect(PanelStatusText.banner(transient: nil, blockedFolders: [], spotlight: .ok) == nil)
+            expect(PanelStatusText.banner(transient: nil, blockedFolders: [], spotlight: .searching) == nil)
+        },
+        TestCase("Status text: the empty label explains why the list is empty") {
+            expect(PanelStatusText.emptyState(rowCount: 3, searchText: "x", spotlight: .searching) == nil)
+            expectEqual(PanelStatusText.emptyState(rowCount: 0, searchText: "x", spotlight: .searching), .noMatches)
+            expectEqual(PanelStatusText.emptyState(rowCount: 0, searchText: "", spotlight: .searching), .loading)
+            expectEqual(PanelStatusText.emptyState(rowCount: 0, searchText: "", spotlight: .ok), .nothingYet)
+            expectEqual(PanelStatusText.emptyState(rowCount: 0, searchText: "", spotlight: .noResults), .nothingYet)
         },
         TestCase("KeyMap: space previews only with an empty search; ⌘Y always previews") {
             expectEqual(PanelKeyMap.command(keyCode: 49, modifiers: [], searchIsEmpty: true), .quickLook)

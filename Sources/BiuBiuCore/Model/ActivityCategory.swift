@@ -17,7 +17,8 @@ package enum ActivityCategory: String, CaseIterable, Codable, Sendable {
 
     package func includes(_ item: ActivityItem) -> Bool {
         switch self {
-        case .all: item.date != nil
+        // Apps are launched many times a day; those entries would bury the files in the timeline.
+        case .all: item.date != nil && !(item.kind == .application && item.event == .opened)
         case .files: item.kind == .file
         case .folders: item.kind == .folder
         case .downloads: item.isDownload
