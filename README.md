@@ -10,6 +10,10 @@ BiuBiu is a menu bar app for macOS that shows the files and folders you recently
 
 <p align="center"><img src="docs/images/biubiu-teaser.gif" width="720" alt="Press ⌥⌘R anywhere: biu biu, and everything you recently touched appears in one timeline"></p>
 
+The full video, with sound (55 s):
+
+https://github.com/user-attachments/assets/1c2f0163-6016-40a7-a11d-a75bfeea4a53
+
 <p align="center"><img src="docs/images/panel-en.jpg" width="640" alt="The BiuBiu panel: pinned items and recent activity grouped by time"></p>
 
 <p align="center">
