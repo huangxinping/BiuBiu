@@ -52,14 +52,14 @@ package final class PinStore {
 
     /// Pins the file, or does nothing when it already is (under this or an earlier name).
     package func pin(url: URL) throws {
-        _ = entries(refresh: true)
+        resolveEntries()
         try addPin(url: url)
     }
 
     /// Pins the file if it is not pinned, unpins it if it is. Returns whether it is pinned afterwards.
     /// Resolves the pins first so a file renamed in Finder is recognized under its new name.
     package func togglePin(url: URL) throws -> Bool {
-        _ = entries(refresh: true)
+        resolveEntries()
         let path = url.standardizedFileURL.path
         if isPinned(path: path) {
             unpin(path: path)
@@ -84,10 +84,13 @@ package final class PinStore {
         save()
     }
 
-    /// Every pin, oldest first. `refresh` resolves the bookmarks again (following moves); otherwise the last
-    /// resolution is reused, so typing in the search field does not touch the disk for every pin.
-    package func entries(refresh: Bool = true) -> [PinnedEntry] {
-        if !refresh, let cachedEntries { return cachedEntries }
+    /// Every pin, oldest first, as last resolved, so typing in the search field does not touch the disk
+    /// for every pin. Resolves them once when nothing has been resolved yet.
+    package var entries: [PinnedEntry] { cachedEntries ?? resolveEntries() }
+
+    /// Resolves every bookmark again, following moves and renames, and saves any new paths it finds.
+    @discardableResult
+    package func resolveEntries() -> [PinnedEntry] {
         var changed = false
         let result = pins.indices.map { index -> PinnedEntry in
             var pin = pins[index]

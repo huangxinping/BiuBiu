@@ -155,28 +155,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panelController?.hide()
         if settingsWindow == nil {
             let general = GeneralSettingsViewController(settings: settings, hotKeyWorking: hotKeyWorking, callbacks: .init(
-                hotKeyChanged: { [weak self] combo in
-                    guard let self else { return false }
-                    self.settings.hotKey = combo
-                    return self.applyHotKey()
-                },
+                hotKeyChanged: { [weak self] in self?.applyHotKey() ?? false },
                 hotKeyRecording: { [weak self] recording in
                     if recording { self?.hotKeys.unregister() } else { self?.applyHotKey() }
                 },
-                timeWindowChanged: { [weak self] days in
+                timeWindowChanged: { [weak self] in
                     guard let self else { return }
-                    self.settings.timeWindowDays = days
-                    self.store.timeWindowDays = days
+                    self.store.timeWindowDays = self.settings.timeWindowDays
                     self.startSources()
                 },
-                hiddenCategoriesChanged: { [weak self] hidden in
-                    guard let self else { return }
-                    self.settings.hiddenCategories = hidden
-                    self.panelController?.viewController.reloadCategories()
-                },
-                languageChanged: { [weak self] code in
-                    self?.settings.languageOverride = code
-                }
+                hiddenCategoriesChanged: { [weak self] in self?.panelController?.viewController.reloadCategories() }
             ))
             let ignore = IgnoreRulesViewController(rules: settings.ignoreRules) { [weak self] rules in
                 self?.setIgnoreRules(rules)
@@ -188,9 +176,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func showWelcome() {
         settings.hasSeenWelcome = true
-        // Set from docs/superpowers/notes/2026-10-01-privacy-probe.md (Task 1).
-        welcomeWindow = WelcomeWindowController(shortcut: hotKeyWorking ? settings.hotKey?.localizedDisplayString : nil,
-                                                privacyNote: .expectPrompts) { [weak self] in
+        welcomeWindow = WelcomeWindowController(shortcut: hotKeyWorking ? settings.hotKey?.localizedDisplayString : nil) { [weak self] in
             self?.welcomeWindow = nil
             self?.startSources()
         }

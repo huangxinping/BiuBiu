@@ -22,7 +22,6 @@ final class Canvas {
     }
 
     var bounds: CGRect { CGRect(x: 0, y: 0, width: width, height: height) }
-    var center: CGPoint { CGPoint(x: width / 2, y: height / 2) }
 
     /// BGRA pixels, as ffmpeg's `-pix_fmt bgra` expects.
     var pixels: Data { Data(bytes: ctx.data!, count: width * height * 4) }
@@ -54,8 +53,6 @@ final class Canvas {
         // CGContext offsets are in the unflipped device space.
         ctx.setShadow(offset: CGSize(width: offset.width, height: -offset.height), blur: blur, color: color.cgColor)
     }
-
-    func noShadow() { ctx.setShadow(offset: .zero, blur: 0, color: nil) }
 
     // MARK: - Shapes
 

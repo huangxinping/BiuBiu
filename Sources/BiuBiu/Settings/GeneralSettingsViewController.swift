@@ -3,12 +3,13 @@ import BiuBiuCore
 
 @MainActor
 final class GeneralSettingsViewController: NSViewController {
+    /// Called after the page has saved the new value to `settings`.
     struct Callbacks {
-        let hotKeyChanged: (HotKeyCombo?) -> Bool
+        /// Re-registers the shortcut; false when it could not be registered.
+        let hotKeyChanged: () -> Bool
         let hotKeyRecording: (Bool) -> Void
-        let timeWindowChanged: (Int) -> Void
-        let hiddenCategoriesChanged: (Set<ActivityCategory>) -> Void
-        let languageChanged: (String?) -> Void
+        let timeWindowChanged: () -> Void
+        let hiddenCategoriesChanged: () -> Void
     }
 
     private let settings: AppSettings
@@ -42,7 +43,8 @@ final class GeneralSettingsViewController: NSViewController {
         recorder.onRecordingChanged = callbacks.hotKeyRecording
         recorder.onChange = { [weak self] combo in
             guard let self else { return }
-            let ok = self.callbacks.hotKeyChanged(combo)
+            self.settings.hotKey = combo
+            let ok = self.callbacks.hotKeyChanged()
             self.setMessageRow(Self.hotKeyWarningRow, label: self.hotKeyWarning, visible: !ok)
         }
         hotKeyWarning.stringValue = L("This shortcut is unavailable. Choose another one.")
@@ -151,7 +153,7 @@ final class GeneralSettingsViewController: NSViewController {
     }
 
     @objc private func languageChanged() {
-        callbacks.languageChanged(languagePopup.selectedItem?.representedObject as? String)
+        settings.languageOverride = languagePopup.selectedItem?.representedObject as? String
         setMessageRow(Self.restartRow, label: restartNote, visible: true)
     }
 
@@ -169,11 +171,12 @@ final class GeneralSettingsViewController: NSViewController {
     }
 
     @objc private func windowChanged() {
-        callbacks.timeWindowChanged(windowPopup.selectedTag())
+        settings.timeWindowDays = windowPopup.selectedTag()
+        callbacks.timeWindowChanged()
     }
 
     @objc private func categoriesChanged() {
-        let hidden = Set(categoryBoxes.filter { $0.value.state == .off }.map(\.key))
-        callbacks.hiddenCategoriesChanged(hidden)
+        settings.hiddenCategories = Set(categoryBoxes.filter { $0.value.state == .off }.map(\.key))
+        callbacks.hiddenCategoriesChanged()
     }
 }

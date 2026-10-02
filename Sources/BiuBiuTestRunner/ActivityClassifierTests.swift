@@ -127,6 +127,11 @@ enum ActivityClassifierTests {
                 since: since, downloadsPath: downloads, now: now)
             expectEqual(jitter?.event, .saved)
         },
+        TestCase("Classifier: only downloads saved outside Downloads need a creation date") {
+            expect(ActivityClassifier.needsCreationDate(path: "/Users/me/Desktop/x.zip", whereFroms: ["https://a.com/x"], downloadsPath: downloads))
+            expect(!ActivityClassifier.needsCreationDate(path: "/Users/me/Downloads/x.zip", whereFroms: ["https://a.com/x"], downloadsPath: downloads))
+            expect(!ActivityClassifier.needsCreationDate(path: "/Users/me/Desktop/x.zip", whereFroms: [], downloadsPath: downloads))
+        },
         TestCase("Classifier: host skips where-froms that are not URLs") {
             expectEqual(ActivityClassifier.host(from: ["not a url", "https://b.org/x"]), "b.org")
             expect(ActivityClassifier.host(from: []) == nil)

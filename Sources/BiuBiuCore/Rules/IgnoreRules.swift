@@ -51,10 +51,12 @@ package enum IgnoreRule: Codable, Hashable, Sendable {
             let iCloud = Self.expand(Self.iCloudFolder, homeDirectory: homeDirectory)
             if path.hasPrefix(iCloud), iCloud.hasPrefix(prefix), prefix != iCloud { return false }
             return (path + "/").hasPrefix(prefix)
-        case .pathContains(let fragment):
-            guard !fragment.trimmingCharacters(in: .whitespaces).isEmpty else { return false }
+        case .pathContains(let raw):
+            let fragment = raw.trimmingCharacters(in: .whitespaces)
+            guard !fragment.isEmpty else { return false }
             let candidate = isDirectory ? path + "/" : path
-            return candidate.contains(fragment)
+            // The file system ignores case, so "/Node_Modules/" must still hide node_modules.
+            return candidate.range(of: fragment, options: .caseInsensitive) != nil
         case .fileExtension(let raw):
             guard !isDirectory else { return false }
             let ext = raw.trimmingCharacters(in: CharacterSet(charactersIn: ". ")).lowercased()

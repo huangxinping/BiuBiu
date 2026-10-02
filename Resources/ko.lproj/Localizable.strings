@@ -79,8 +79,6 @@
 "Click the menu bar icon to open it." = "메뉴 막대 아이콘을 클릭하면 열립니다.";
 "Get Started" = "시작하기";
 "macOS may ask whether BiuBiu can access your Desktop, Documents or Downloads folder. Click Allow so those files can appear in the list." = "macOS가 BiuBiu의 데스크탑, 문서 또는 다운로드 폴더 접근을 허용할지 물을 수 있습니다. 해당 폴더의 파일이 목록에 표시되도록 ‘허용’을 클릭하십시오.";
-"To list files from your Desktop, Documents and Downloads, BiuBiu needs Full Disk Access. Turn on BiuBiu in the list that opens." = "데스크탑, 문서, 다운로드의 파일을 표시하려면 BiuBiu에 전체 디스크 접근 권한이 필요합니다. 열리는 목록에서 BiuBiu를 켜십시오.";
-"Open Privacy Settings…" = "개인정보 보호 설정 열기…";
 "Space" = "스페이스";
 "Language:" = "언어:";
 "System Default" = "시스템 설정 따르기";

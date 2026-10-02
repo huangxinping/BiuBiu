@@ -4,19 +4,19 @@ import BiuBiuCore
 @MainActor
 enum PinStoreTests {
     static var tests: [TestCase] { [
-        TestCase("PinStore: entries are cached until refreshed or the pins change") {
+        TestCase("PinStore: entries are cached until resolved again or the pins change") {
             let dir = try makeTempDirectory()
             defer { try? FileManager.default.removeItem(at: dir) }
             let a = dir.appendingPathComponent("a.txt"), b = dir.appendingPathComponent("b.txt")
             try Data().write(to: a); try Data().write(to: b)
             let store = PinStore(fileURL: dir.appendingPathComponent("pins.json"))
             try store.pin(url: a)
-            expectEqual(store.entries().first?.displayName, "a.txt")
+            expectEqual(store.resolveEntries().first?.displayName, "a.txt")
             try FileManager.default.moveItem(at: a, to: dir.appendingPathComponent("moved.txt"))
-            expectEqual(store.entries(refresh: false).first?.displayName, "a.txt")
-            expectEqual(store.entries(refresh: true).first?.displayName, "moved.txt")
+            expectEqual(store.entries.first?.displayName, "a.txt")
+            expectEqual(store.resolveEntries().first?.displayName, "moved.txt")
             try store.pin(url: b)
-            expectEqual(store.entries(refresh: false).map(\.displayName), ["moved.txt", "b.txt"])
+            expectEqual(store.entries.map(\.displayName), ["moved.txt", "b.txt"])
         },
         TestCase("PinStore: pins persist across instances, oldest first, no duplicates") {
             let dir = try makeTempDirectory()
@@ -30,7 +30,7 @@ enum PinStoreTests {
             try store.pin(url: a)
             try store.pin(url: b)
             let reloaded = PinStore(fileURL: file)
-            expectEqual(reloaded.entries().map(\.displayName), ["b.txt", "a.txt"])
+            expectEqual(reloaded.resolveEntries().map(\.displayName), ["b.txt", "a.txt"])
             expect(reloaded.isPinned(path: a.path))
         },
         TestCase("PinStore: follows a moved file and reports deleted ones as missing") {
@@ -43,7 +43,7 @@ enum PinStoreTests {
             let moved = dir.appendingPathComponent("renamed.txt")
             try FileManager.default.moveItem(at: a, to: moved)
             try FileManager.default.removeItem(at: gone)
-            let entries = store.entries()
+            let entries = store.resolveEntries()
             expectEqual(entries.first?.url?.path, moved.path)
             expect(store.isPinned(path: moved.path))
             expect(entries.last?.isMissing == true)
@@ -59,7 +59,7 @@ enum PinStoreTests {
             let trash = dir.appendingPathComponent(".Trash", isDirectory: true)
             try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: true)
             try FileManager.default.moveItem(at: a, to: trash.appendingPathComponent("a.txt"))
-            expect(store.entries().first?.isMissing == true)
+            expect(store.resolveEntries().first?.isMissing == true)
         },
         TestCase("PinStore: unpin removes and saves") {
             let dir = try makeTempDirectory()

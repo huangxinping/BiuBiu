@@ -13,7 +13,6 @@ final class Assets {
         }
         let size: [CGFloat]
         let searchField: [CGFloat]
-        let segments: [CGFloat]
         let states: [String: [Row]]
     }
 

@@ -24,6 +24,11 @@ enum IgnoreRulesTests {
             expect(!rules.isIgnored(path: "/Applications/Figma.app", isDirectory: false, homeDirectory: home))
             expect(rules.isIgnored(path: "/Applications/Figma.app/Contents/Info.plist", isDirectory: false, homeDirectory: home))
         },
+        TestCase("IgnoreRules: contains ignores case and surrounding spaces") {
+            let rules = IgnoreRules(rules: [.pathContains(" /Node_Modules/ ")], ignoreHidden: false)
+            expect(rules.isIgnored(path: "/Users/me/p/node_modules/x.js", isDirectory: false, homeDirectory: home))
+            expect(!rules.isIgnored(path: "/Users/me/p/modules/x.js", isDirectory: false, homeDirectory: home))
+        },
         TestCase("IgnoreRules: extension is case-insensitive, tolerates a dot, skips folders") {
             let rules = IgnoreRules(rules: [.fileExtension(".TMP")], ignoreHidden: false)
             expect(rules.isIgnored(path: "/Users/me/x.tmp", isDirectory: false, homeDirectory: home))

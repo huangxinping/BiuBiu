@@ -18,8 +18,7 @@ enum ScreenshotMode {
         let store = demo.store
 
         let general = GeneralSettingsViewController(settings: demo.settings, hotKeyWorking: true, callbacks: .init(
-            hotKeyChanged: { _ in true }, hotKeyRecording: { _ in }, timeWindowChanged: { _ in },
-            hiddenCategoriesChanged: { _ in }, languageChanged: { _ in }))
+            hotKeyChanged: { true }, hotKeyRecording: { _ in }, timeWindowChanged: {}, hiddenCategoriesChanged: {}))
         let ignore = IgnoreRulesViewController(rules: demo.settings.ignoreRules) { _ in }
         let settingsWindow = SettingsWindowController(general: general, ignoreRules: ignore).window!
 

@@ -19,13 +19,17 @@ enum SourcesTests {
             // ~23k recent items, on the main thread, so clicks and the shortcut did nothing.
             let source = SpotlightFileSource()
             var items: [ActivityItem]?
+            var status = SpotlightStatus.searching
+            source.onStatus = { status = $0 }
             let start = Date()
             source.start(since: start.addingTimeInterval(-7 * 86_400)) { items = $0 }
-            while items == nil, Date().timeIntervalSince(start) < 15 {
+            while items == nil, status != .noResults, Date().timeIntervalSince(start) < 15 {
                 RunLoop.main.run(until: Date().addingTimeInterval(0.05))
             }
             source.stop()
             let elapsed = Date().timeIntervalSince(start)
+            // An unindexed home folder (a CI runner) is not a regression; a slow one is.
+            if status == .noResults { throw SkipTest(reason: "this Mac's home folder is not in the Spotlight index") }
             expect(items != nil, "no results after \(Int(elapsed)) s")
             expect(elapsed < 10, "first results took \(String(format: "%.1f", elapsed)) s")
         },
@@ -45,8 +49,7 @@ enum SourcesTests {
             }
             runner.stop()
             guard let records, !records.isEmpty else {
-                print("    skipped: Spotlight returned nothing for /System/Applications")
-                return
+                throw SkipTest(reason: "Spotlight returned nothing for /System/Applications")
             }
             expect(records.allSatisfy { $0.path.hasPrefix("/System/Applications/") && $0.path.hasSuffix(".app") },
                    "a record is missing its path")

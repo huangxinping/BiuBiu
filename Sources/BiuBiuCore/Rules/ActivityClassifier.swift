@@ -37,6 +37,16 @@ package enum ActivityClassifier {
     /// A write this long after a download arrived is a later edit, not the download finishing.
     package static let downloadWindow: TimeInterval = 3600
 
+    /// Whether `isDownload` will need `contentCreated`: only a file with a download source that was saved
+    /// somewhere other than Downloads. Sources ask before paying for a stat.
+    package static func needsCreationDate(path: String, whereFroms: [String], downloadsPath: String) -> Bool {
+        !whereFroms.isEmpty && !path.hasPrefix(downloadsPrefix(downloadsPath))
+    }
+
+    private static func downloadsPrefix(_ downloadsPath: String) -> String {
+        downloadsPath.hasSuffix("/") ? downloadsPath : downloadsPath + "/"
+    }
+
     /// Turns Spotlight metadata into an activity, or nil when nothing happened since `since`.
     /// Dates after `now` (plus a little clock jitter) are bad data and are ignored, so a file whose
     /// modification date is years ahead still shows up when it is really opened.
@@ -48,7 +58,7 @@ package enum ActivityClassifier {
         m.contentModified = plausible(m.contentModified)
         m.dateAdded = plausible(m.dateAdded)
 
-        let downloadsPrefix = downloadsPath.hasSuffix("/") ? downloadsPath : downloadsPath + "/"
+        let downloadsPrefix = downloadsPrefix(downloadsPath)
         // Order is the tie-break priority: added (or downloaded) beats saved beats opened.
         let download = m.dateAdded != nil && isDownload(m, downloadsPrefix: downloadsPrefix)
         var candidates: [(ActivityEvent, Date)] = []

@@ -1,6 +1,6 @@
 import Foundation
 
-package enum TimeGroup: Int, CaseIterable, Comparable, Sendable {
+package enum TimeGroup: Int, CaseIterable, Sendable {
     case justNow, today, yesterday, thisWeek, earlier
 
     package var titleKey: String {
@@ -12,8 +12,6 @@ package enum TimeGroup: Int, CaseIterable, Comparable, Sendable {
         case .earlier: "Earlier"
         }
     }
-
-    package static func < (lhs: TimeGroup, rhs: TimeGroup) -> Bool { lhs.rawValue < rhs.rawValue }
 
     package static func group(for date: Date, now: Date, calendar: Calendar) -> TimeGroup {
         if now.timeIntervalSince(date) < 3600 { return .justNow }

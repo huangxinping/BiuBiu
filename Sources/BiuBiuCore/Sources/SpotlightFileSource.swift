@@ -78,8 +78,7 @@ package final class SpotlightFileSource: ActivitySource {
                              creationDate: (String, Date?) -> Date?) -> ActivityItem? {
         let whereFroms = record.strings(NSMetadataItemWhereFromsKey)
         let dateAdded = record.date(NSMetadataItemDateAddedKey)
-        // Only a download saved outside Downloads needs its creation date (see ActivityClassifier).
-        let needsCreation = !whereFroms.isEmpty && !record.path.hasPrefix(downloadsPath + "/")
+        let needsCreation = ActivityClassifier.needsCreationDate(path: record.path, whereFroms: whereFroms, downloadsPath: downloadsPath)
         let metadata = FileMetadata(
             path: record.path,
             isFolder: record.string(NSMetadataItemContentTypeKey) == "public.folder",

@@ -124,7 +124,7 @@ final class PanelViewController: NSViewController {
     func reload(resetSelection: Bool, refreshPins: Bool = false) {
         let previous = selectedRow.flatMap { rows.indices.contains($0) ? rows[$0] : nil }
         rows = PanelRowsBuilder.rows(
-            pins: deps.pinStore.entries(refresh: refreshPins),
+            pins: refreshPins ? deps.pinStore.resolveEntries() : deps.pinStore.entries,
             showPinned: deps.store.category == .all,
             pinnedCollapsed: deps.settings.pinnedCollapsed,
             searchText: deps.store.searchText,

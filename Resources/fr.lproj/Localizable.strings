@@ -79,8 +79,6 @@
 "Click the menu bar icon to open it." = "Cliquez sur l’icône dans la barre des menus pour l’ouvrir.";
 "Get Started" = "Commencer";
 "macOS may ask whether BiuBiu can access your Desktop, Documents or Downloads folder. Click Allow so those files can appear in the list." = "macOS peut vous demander si BiuBiu peut accéder à vos dossiers Bureau, Documents ou Téléchargements. Cliquez sur Autoriser pour que leurs fichiers apparaissent dans la liste.";
-"To list files from your Desktop, Documents and Downloads, BiuBiu needs Full Disk Access. Turn on BiuBiu in the list that opens." = "Pour lister les fichiers du Bureau, de Documents et de Téléchargements, BiuBiu a besoin de l’accès complet au disque. Activez BiuBiu dans la liste qui s’ouvre.";
-"Open Privacy Settings…" = "Ouvrir les réglages de confidentialité…";
 "Space" = "Espace";
 "Language:" = "Langue :";
 "System Default" = "Langue du système";
