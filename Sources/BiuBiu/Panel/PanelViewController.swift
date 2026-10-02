@@ -190,7 +190,8 @@ final class PanelViewController: NSViewController {
     func handleKeyDown(_ event: NSEvent) -> Bool {
         guard let command = PanelKeyMap.command(keyCode: event.keyCode,
                                                 modifiers: HotKeyModifiers(event.modifierFlags),
-                                                searchIsEmpty: searchField.stringValue.isEmpty) else { return false }
+                                                searchIsEmpty: searchField.stringValue.isEmpty,
+                                                isComposing: isComposingText) else { return false }
         switch command {
         case .moveDown: moveSelection(by: 1)
         case .moveUp: moveSelection(by: -1)
@@ -210,6 +211,11 @@ final class PanelViewController: NSViewController {
         case .selectCategory(let index): selectCategory(at: index)
         }
         return true
+    }
+
+    /// True while an input method (Pinyin, Japanese, …) has uncommitted text in the search field.
+    private var isComposingText: Bool {
+        (searchField.currentEditor() as? NSTextView)?.hasMarkedText() == true
     }
 
     private func selectCategory(at index: Int) {

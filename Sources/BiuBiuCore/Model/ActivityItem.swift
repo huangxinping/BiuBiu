@@ -29,8 +29,15 @@ package struct ActivityItem: Identifiable, Hashable, Sendable {
     package let displayName: String
     package let parentName: String?
     package let sourceHost: String?
+    /// Whether the file arrived by download, whatever happened to it since (opened, saved).
+    package let isDownload: Bool
 
     package var id: String { url.path }
+
+    /// iCloud Drive's folder on disk is ~/Library/Mobile Documents/com~apple~CloudDocs.
+    private static func folderName(_ folder: URL) -> String {
+        folder.lastPathComponent == "com~apple~CloudDocs" ? "iCloud Drive" : folder.lastPathComponent
+    }
 
     package init(
         url: URL,
@@ -39,7 +46,8 @@ package struct ActivityItem: Identifiable, Hashable, Sendable {
         date: Date?,
         displayName: String? = nil,
         parentName: String? = nil,
-        sourceHost: String? = nil
+        sourceHost: String? = nil,
+        isDownload: Bool = false
     ) {
         let standardized = url.standardizedFileURL
         self.url = standardized
@@ -47,7 +55,8 @@ package struct ActivityItem: Identifiable, Hashable, Sendable {
         self.event = event
         self.date = date
         self.displayName = displayName ?? standardized.lastPathComponent
-        self.parentName = parentName ?? standardized.deletingLastPathComponent().lastPathComponent
+        self.parentName = parentName ?? Self.folderName(standardized.deletingLastPathComponent())
         self.sourceHost = sourceHost
+        self.isDownload = isDownload || event == .downloaded
     }
 }

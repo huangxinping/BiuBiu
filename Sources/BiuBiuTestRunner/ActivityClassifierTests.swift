@@ -83,8 +83,25 @@ enum ActivityClassifierTests {
             let item = classify(FileMetadata(path: "/Users/me/Downloads/x.pdf", isFolder: false,
                                              contentCreated: at(200), contentModified: at(200 + 7200), dateAdded: at(200),
                                              whereFroms: ["https://a.com/x"]))
+            // Still a download (it stays under Downloads), but the latest thing that happened is the save.
             expectEqual(item?.event, .saved)
-            expect(item?.sourceHost == nil)
+            expectEqual(item?.date, at(200 + 7200))
+            expect(item?.isDownload == true)
+            expectEqual(item?.sourceHost, "a.com")
+        },
+        TestCase("Classifier: opening a download keeps it marked as a download") {
+            let item = classify(FileMetadata(path: "/Users/me/Downloads/x.pdf", isFolder: false, lastUsed: at(600),
+                                             contentCreated: at(200), contentModified: at(200), dateAdded: at(200),
+                                             whereFroms: ["https://a.com/x.pdf"]))
+            expectEqual(item?.event, .opened)
+            expect(item?.isDownload == true)
+            expectEqual(item?.sourceHost, "a.com")
+        },
+        TestCase("Classifier: a moved file is not marked as a download") {
+            let item = classify(FileMetadata(path: "/Users/me/Desktop/x.png", isFolder: false,
+                                             contentCreated: at(100), contentModified: at(100), dateAdded: at(145),
+                                             whereFroms: ["https://a.com/x.png"]))
+            expect(item?.isDownload == false)
         },
         TestCase("Classifier: host skips where-froms that are not URLs") {
             expectEqual(ActivityClassifier.host(from: ["not a url", "https://b.org/x"]), "b.org")

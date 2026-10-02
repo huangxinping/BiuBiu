@@ -8,8 +8,11 @@ package enum PanelCommand: Equatable, Sendable {
 
 /// Maps key presses in the panel to commands. Keys that are not commands fall through to the search field.
 package enum PanelKeyMap {
-    package static func command(keyCode: UInt16, modifiers: HotKeyModifiers, searchIsEmpty: Bool) -> PanelCommand? {
-        switch (keyCode, modifiers) {
+    package static func command(keyCode: UInt16, modifiers: HotKeyModifiers, searchIsEmpty: Bool,
+                                isComposing: Bool = false) -> PanelCommand? {
+        // Pinyin and other input methods use Return, arrows, Esc and Space while composing.
+        if isComposing { return nil }
+        return switch (keyCode, modifiers) {
         case (125, []): .moveDown
         case (126, []): .moveUp
         case (36, []), (76, []): .open

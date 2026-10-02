@@ -35,6 +35,18 @@ enum PinStoreTests {
             expect(entries.last?.isMissing == true)
             expectEqual(entries.last?.displayName, "gone.txt")
         },
+        TestCase("PinStore: a pinned file moved to the Trash counts as missing") {
+            let dir = try makeTempDirectory()
+            defer { try? FileManager.default.removeItem(at: dir) }
+            let a = dir.appendingPathComponent("a.txt")
+            try Data().write(to: a)
+            let store = PinStore(fileURL: dir.appendingPathComponent("pins.json"))
+            try store.pin(url: a)
+            let trash = dir.appendingPathComponent(".Trash", isDirectory: true)
+            try FileManager.default.createDirectory(at: trash, withIntermediateDirectories: true)
+            try FileManager.default.moveItem(at: a, to: trash.appendingPathComponent("a.txt"))
+            expect(store.entries().first?.isMissing == true)
+        },
         TestCase("PinStore: unpin removes and saves") {
             let dir = try makeTempDirectory()
             defer { try? FileManager.default.removeItem(at: dir) }

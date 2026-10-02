@@ -20,7 +20,7 @@ package enum ActivityCategory: String, CaseIterable, Codable, Sendable {
         case .all: item.date != nil
         case .files: item.kind == .file
         case .folders: item.kind == .folder
-        case .downloads: item.event == .downloaded
+        case .downloads: item.isDownload
         case .apps: item.kind == .application
         case .volumes: item.kind == .volume
         }

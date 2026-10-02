@@ -37,6 +37,8 @@ package enum IgnoreRule: Codable, Hashable, Sendable {
         return path
     }
 
+    static let iCloudFolder = "~/Library/Mobile Documents/"
+
     func matches(path: String, isDirectory: Bool, homeDirectory: String) -> Bool {
         switch self {
         case .pathPrefix(let raw):
@@ -44,6 +46,10 @@ package enum IgnoreRule: Codable, Hashable, Sendable {
             guard !trimmed.isEmpty else { return false }
             var prefix = Self.expand(trimmed, homeDirectory: homeDirectory)
             if !prefix.hasSuffix("/") { prefix += "/" }
+            // iCloud Drive lives in ~/Library/Mobile Documents. A rule for a folder above it (such as the
+            // default "~/Library/") must not hide it; rules inside iCloud Drive still apply.
+            let iCloud = Self.expand(Self.iCloudFolder, homeDirectory: homeDirectory)
+            if path.hasPrefix(iCloud), iCloud.hasPrefix(prefix), prefix != iCloud { return false }
             return (path + "/").hasPrefix(prefix)
         case .pathContains(let fragment):
             guard !fragment.trimmingCharacters(in: .whitespaces).isEmpty else { return false }

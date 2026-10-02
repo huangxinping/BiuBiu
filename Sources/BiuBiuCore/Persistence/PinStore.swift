@@ -69,7 +69,8 @@ package final class PinStore {
             var isStale = false
             guard let url = try? URL(resolvingBookmarkData: pin.bookmark, options: [.withoutUI],
                                      relativeTo: nil, bookmarkDataIsStale: &isStale),
-                  FileManager.default.fileExists(atPath: url.path) else {
+                  FileManager.default.fileExists(atPath: url.path),
+                  !Self.isInTrash(url) else {
                 return PinnedEntry(pin: pin, url: nil)
             }
             let resolvedPath = url.standardizedFileURL.path
@@ -85,6 +86,11 @@ package final class PinStore {
         }
         if changed { save() }
         return result
+    }
+
+    /// Deleting in Finder moves to the Trash; the bookmark follows, but the file is gone for the user.
+    private static func isInTrash(_ url: URL) -> Bool {
+        url.pathComponents.contains { $0 == ".Trash" || $0 == ".Trashes" }
     }
 
     private func load() {

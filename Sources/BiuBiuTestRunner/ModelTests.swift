@@ -15,6 +15,16 @@ enum ModelTests {
             expectEqual(a.parentName, "Documents")
             expectEqual(a.id, "/Users/me/Documents/report.pdf")
         },
+        TestCase("Model: an opened download stays in the Downloads category") {
+            let opened = ActivityItem(url: URL(fileURLWithPath: "/Users/me/Downloads/x.zip"), kind: .file,
+                                      event: .opened, date: Date(), isDownload: true)
+            expect(ActivityCategory.downloads.includes(opened))
+            expect(!ActivityCategory.downloads.includes(item("/Users/me/Documents/y.txt", event: .opened)))
+        },
+        TestCase("Model: iCloud Drive's folder is called iCloud Drive") {
+            let doc = item("/Users/me/Library/Mobile Documents/com~apple~CloudDocs/Report.pages")
+            expectEqual(doc.parentName, "iCloud Drive")
+        },
         TestCase("Model: explicit display name wins") {
             let app = ActivityItem(url: URL(fileURLWithPath: "/Applications/Figma.app"), kind: .application,
                                    event: .installed, date: Date(), displayName: "Figma")

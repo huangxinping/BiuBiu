@@ -47,6 +47,14 @@ enum PanelTests {
             expect(PanelKeyMap.command(keyCode: 49, modifiers: [.shift], searchIsEmpty: true) == nil)
             expectEqual(PanelKeyMap.command(keyCode: 16, modifiers: [.command], searchIsEmpty: false), .quickLook)
         },
+        TestCase("KeyMap: while an input method is composing, keys belong to it") {
+            // Pinyin: Return commits the letters, arrows move through candidates, Esc cancels.
+            for code: UInt16 in [36, 76, 125, 126, 53, 49] {
+                expect(PanelKeyMap.command(keyCode: code, modifiers: [], searchIsEmpty: false, isComposing: true) == nil,
+                       "key \(code) was taken from the input method")
+            }
+            expectEqual(PanelKeyMap.command(keyCode: 36, modifiers: [], searchIsEmpty: false, isComposing: false), .open)
+        },
         TestCase("KeyMap: ⌘1-⌘6 pick categories; plain letters and digits type") {
             expectEqual(PanelKeyMap.command(keyCode: 18, modifiers: [.command], searchIsEmpty: true), .selectCategory(0))
             expectEqual(PanelKeyMap.command(keyCode: 22, modifiers: [.command], searchIsEmpty: true), .selectCategory(5))

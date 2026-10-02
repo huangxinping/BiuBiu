@@ -53,6 +53,19 @@ enum IgnoreRulesTests {
             expect(rules.isIgnored(path: "/Users/me/Pictures/Photos Library.photoslibrary", isDirectory: false, homeDirectory: home))
             expect(rules.isIgnored(path: "/Users/me/Music/Music/Music Library.musiclibrary/x/y.db", isDirectory: false, homeDirectory: home))
         },
+        TestCase("IgnoreRules: the Library default does not hide iCloud Drive, other rules still apply") {
+            let rules = IgnoreRules(rules: IgnoreRules.defaults.rules + [.pathPrefix("~/Library/Mobile Documents/com~apple~CloudDocs/Old")],
+                                    ignoreHidden: true)
+            expect(!rules.isIgnored(path: "/Users/me/Library/Mobile Documents/com~apple~CloudDocs/Report.pages",
+                                    isDirectory: false, homeDirectory: home))
+            expect(!rules.isIgnored(path: "/Users/me/Library/Mobile Documents/iCloud~com~apple~Pages/Documents/a.pages",
+                                    isDirectory: false, homeDirectory: home))
+            expect(rules.isIgnored(path: "/Users/me/Library/Mobile Documents/com~apple~CloudDocs/Old/a.txt",
+                                   isDirectory: false, homeDirectory: home))
+            expect(rules.isIgnored(path: "/Users/me/Library/Mobile Documents/com~apple~CloudDocs/x.tmp",
+                                   isDirectory: false, homeDirectory: home))
+            expect(rules.isIgnored(path: "/Users/me/Library/Caches/a.db", isDirectory: false, homeDirectory: home))
+        },
         TestCase("IgnoreRules: abbreviate and expand home") {
             expectEqual(IgnoreRule.abbreviate("/Users/me/Desktop/a", homeDirectory: home), "~/Desktop/a")
             expectEqual(IgnoreRule.abbreviate("/Users/meow/a", homeDirectory: home), "/Users/meow/a")

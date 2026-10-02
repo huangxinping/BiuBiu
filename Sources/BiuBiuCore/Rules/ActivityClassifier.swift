@@ -41,9 +41,10 @@ package enum ActivityClassifier {
     package static func classify(_ m: FileMetadata, since: Date, downloadsPath: String) -> ActivityItem? {
         let downloadsPrefix = downloadsPath.hasSuffix("/") ? downloadsPath : downloadsPath + "/"
         // Order is the tie-break priority: added (or downloaded) beats saved beats opened.
+        let download = m.dateAdded != nil && isDownload(m, downloadsPrefix: downloadsPrefix)
         var candidates: [(ActivityEvent, Date)] = []
         if let added = m.dateAdded {
-            if isDownload(m, downloadsPrefix: downloadsPrefix) {
+            if download {
                 // Browsers rename "x.crdownload" in place, so date-added marks the start of the download
                 // and the last write marks its end.
                 let finished = m.isFolder ? nil : m.contentModified.flatMap { modified in
@@ -65,7 +66,8 @@ package enum ActivityClassifier {
             kind: m.isFolder ? .folder : .file,
             event: event,
             date: newest,
-            sourceHost: event == .downloaded ? host(from: m.whereFroms) : nil
+            sourceHost: download ? host(from: m.whereFroms) : nil,
+            isDownload: download
         )
     }
 

@@ -23,6 +23,24 @@ final class HotKeyRecorder: NSButton {
 
     required init?(coder: NSCoder) { fatalError("init(coder:) is not used") }
 
+    private var windowObservers: [NSObjectProtocol] = []
+
+    /// Leaving the window mid-recording (closing it or switching away) ends the recording, so the global
+    /// shortcut is restored and keys are no longer swallowed.
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        windowObservers.forEach(NotificationCenter.default.removeObserver)
+        windowObservers = []
+        guard let window else { return }
+        for name in [NSWindow.willCloseNotification, NSWindow.didResignKeyNotification] {
+            windowObservers.append(NotificationCenter.default.addObserver(forName: name, object: window, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    if self?.isRecording == true { self?.stopRecording() }
+                }
+            })
+        }
+    }
+
     @objc private func clicked() {
         isRecording ? stopRecording() : startRecording()
     }
