@@ -204,13 +204,10 @@ final class PanelViewController: NSViewController {
         case .moveUp: moveSelection(by: -1)
         case .open: openSelected()
         case .reveal: revealSelected()
-        case .escape:
-            if searchField.stringValue.isEmpty {
-                deps.close()
-            } else {
-                searchField.stringValue = ""
-                searchChanged()
-            }
+        case .clearSearch:
+            searchField.stringValue = ""
+            searchChanged()
+        case .close: deps.close()
         case .quickLook: toggleQuickLook()
         case .togglePin: togglePinSelected()
         case .copyPath: copyPathOfSelected()
@@ -332,21 +329,24 @@ final class PanelViewController: NSViewController {
         }
     }
 
-    private var showsFolderAccessBanner: Bool { transientMessage == nil && !blockedFolders.isEmpty }
+    private var currentBanner: PanelStatusText.Banner? {
+        PanelStatusText.banner(transient: transientMessage, blockedFolders: blockedFolders, spotlight: spotlightStatus)
+    }
 
     private func updateBanner() {
-        let spotlightProblem = spotlightStatus == .noResults || spotlightStatus == .failedToStart
-        let text = transientMessage
-            ?? (blockedFolders.isEmpty ? nil : folderAccessMessage)
-            ?? (spotlightProblem
-                ? L("Spotlight found nothing in your home folder. It may be excluded from indexing — check System Settings › Spotlight.")
-                : nil)
+        let text: String? = switch currentBanner {
+        case .message(let message): message
+        case .folderAccess(let folders): folderAccessMessage(folders)
+        case .spotlightProblem:
+            L("Spotlight found nothing in your home folder. It may be excluded from indexing — check System Settings › Spotlight.")
+        case nil: nil
+        }
         banner.stringValue = text ?? ""
         banner.isHidden = text == nil
     }
 
-    private var folderAccessMessage: String {
-        let names = blockedFolders.map { folder in
+    private func folderAccessMessage(_ folders: [ProtectedFolder]) -> String {
+        let names = folders.map { folder in
             switch folder {
             case .desktop: L("Desktop")
             case .documents: L("Documents")
@@ -360,19 +360,19 @@ final class PanelViewController: NSViewController {
     }
 
     @objc private func bannerClicked() {
-        guard showsFolderAccessBanner else { return }
+        guard case .folderAccess = currentBanner else { return }
         deps.close()
         AppInfo.openFolderAccessSettings()
     }
 
     private func updateEmptyState() {
-        emptyLabel.isHidden = !rows.isEmpty
-        if !deps.store.searchText.isEmpty {
-            emptyLabel.stringValue = L("No matches")
-        } else if spotlightStatus == .searching {
-            emptyLabel.stringValue = L("Loading…")
-        } else {
-            emptyLabel.stringValue = L("Nothing recent yet")
+        let state = PanelStatusText.emptyState(rowCount: rows.count, searchText: deps.store.searchText, spotlight: spotlightStatus)
+        emptyLabel.isHidden = state == nil
+        emptyLabel.stringValue = switch state {
+        case .noMatches: L("No matches")
+        case .loading: L("Loading…")
+        case .nothingYet: L("Nothing recent yet")
+        case nil: ""
         }
     }
 
