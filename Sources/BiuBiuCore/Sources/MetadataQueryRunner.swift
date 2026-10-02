@@ -19,17 +19,11 @@ package enum SpotlightStatus: Equatable, Sendable {
 package struct MetadataRecord {
     package let path: String
     private let values: [String: Any]
-    private let item: NSMetadataItem?
 
-    package init(path: String, values: [String: Any], item: NSMetadataItem? = nil) {
+    package init(path: String, values: [String: Any]) {
         self.path = path
         self.values = values
-        self.item = item
     }
-
-    /// Reads an attribute the query cannot cache (file-system dates, like the path). Each call is a round
-    /// trip to the Spotlight server, so use it only for the few records that need it.
-    package func uncachedDate(_ key: String) -> Date? { item?.value(forAttribute: key) as? Date }
 
     package func date(_ key: String) -> Date? { values[key] as? Date }
     package func string(_ key: String) -> String? { values[key] as? String }
@@ -76,7 +70,7 @@ package final class MetadataQueryRunner {
                 for key in attributes {
                     if let value = query.value(ofAttribute: key, forResultAt: index) { values[key] = value }
                 }
-                return MetadataRecord(path: path, values: values, item: item)
+                return MetadataRecord(path: path, values: values)
             }
             query.enableUpdates()
             onResults(records)

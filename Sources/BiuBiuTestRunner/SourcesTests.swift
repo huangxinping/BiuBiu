@@ -4,6 +4,16 @@ import BiuBiuCore
 @MainActor
 enum SourcesTests {
     static var tests: [TestCase] { [
+        TestCase("Sources: creation dates come from the file itself, not from Spotlight") {
+            // Spotlight does not provide kMDItemFSCreationDate everywhere (it was nil on the CI runner).
+            let dir = try makeTempDirectory()
+            defer { try? FileManager.default.removeItem(at: dir) }
+            let file = dir.appendingPathComponent("x.pdf")
+            try Data().write(to: file)
+            let created = SpotlightFileSource.fileCreationDate(atPath: file.path)
+            expect(created.map { abs($0.timeIntervalSinceNow) < 60 } == true, "got \(String(describing: created))")
+            expect(SpotlightFileSource.fileCreationDate(atPath: dir.appendingPathComponent("missing").path) == nil)
+        },
         TestCase("Sources: the home folder's recent files arrive within 10 seconds") {
             // Regression: reading every Spotlight result's attributes one at a time took ~35 s for
             // ~23k recent items, on the main thread, so clicks and the shortcut did nothing.
@@ -44,9 +54,6 @@ enum SourcesTests {
                    "content type was not collected")
             expect(records.allSatisfy { $0.string(NSMetadataItemCFBundleIdentifierKey)?.isEmpty == false },
                    "bundle identifier was not collected")
-            // Not in the query's cache (like the path); read from the item on demand, only where needed.
-            expect(records.allSatisfy { $0.uncachedDate(NSMetadataItemFSCreationDateKey) != nil },
-                   "file-system creation date is not readable from the item")
         },
         TestCase("Sources: apps in ~/Applications are left to the app source, others stay files") {
             let apps = "/Users/me/Applications/"

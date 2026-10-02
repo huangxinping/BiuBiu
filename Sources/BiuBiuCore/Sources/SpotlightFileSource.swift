@@ -49,6 +49,12 @@ package final class SpotlightFileSource: ActivitySource {
 
     package func stop() { runner.stop() }
 
+    /// The file system's creation date, read from the file itself: Spotlight does not provide
+    /// kMDItemFSCreationDate on every Mac. Only called for the few files that need it.
+    package static func fileCreationDate(atPath path: String) -> Date? {
+        try? URL(fileURLWithPath: path).resourceValues(forKeys: [.creationDateKey]).creationDate
+    }
+
     /// Apps in ~/Applications are AppInstallSource's job; skipping them here makes them show up as apps,
     /// not as "Added" files. Apps elsewhere (say, just unzipped in Downloads) stay files.
     package static func isLeftToAppSource(contentType: String?, path: String?, userApplicationsPath: String) -> Bool {
@@ -64,7 +70,7 @@ package final class SpotlightFileSource: ActivitySource {
             isFolder: record.string(NSMetadataItemContentTypeKey) == "public.folder",
             lastUsed: record.date(NSMetadataItemLastUsedDateKey),
             // The file system's creation date: kMDItemContentCreationDate can come from EXIF or PDF metadata.
-            contentCreated: needsCreation ? record.uncachedDate(NSMetadataItemFSCreationDateKey) : nil,
+            contentCreated: needsCreation ? Self.fileCreationDate(atPath: record.path) : nil,
             contentModified: record.date(NSMetadataItemContentModificationDateKey),
             dateAdded: record.date(NSMetadataItemDateAddedKey),
             whereFroms: whereFroms
