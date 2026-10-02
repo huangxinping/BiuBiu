@@ -86,3 +86,8 @@
 "System Default" = "Idioma del sistema";
 "Restart BiuBiu to use the new language." = "Reinicia BiuBiu para usar el nuevo idioma.";
 "Restart Now" = "Reiniciar ahora";
+
+/* Folder access */
+"Desktop" = "Escritorio";
+"Documents" = "Documentos";
+"BiuBiu isn’t allowed to read %@, so those files are missing. Click to allow it in System Settings." = "BiuBiu no tiene permiso para leer %@, así que faltan esos archivos. Haz clic para permitirlo en Ajustes del Sistema.";

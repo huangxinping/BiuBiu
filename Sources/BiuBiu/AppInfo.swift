@@ -1,4 +1,4 @@
-import Foundation
+import AppKit
 
 enum AppInfo {
     static var version: String {
@@ -13,4 +13,11 @@ enum AppInfo {
     }
 
     static var releasesURL: URL? { repositoryURL?.appendingPathComponent("releases/latest") }
+
+    /// System Settings › Privacy & Security › Files & Folders.
+    static func openFolderAccessSettings() {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_FilesAndFolders")
+        else { return }
+        NSWorkspace.shared.open(url)
+    }
 }

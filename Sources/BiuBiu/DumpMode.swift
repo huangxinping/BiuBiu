@@ -24,6 +24,8 @@ enum DumpMode {
 
         let dateFormatter = ISO8601DateFormatter()
         print("Spotlight status: \(status)")
+        let readable = FolderAccess.readableFolders(home: NSHomeDirectory())
+        print("Blocked folders: \(FolderAccess.blocked(readable: readable).map(\.rawValue))")
         for item in store.allItems.prefix(40) {
             let date = item.date.map(dateFormatter.string(from:)) ?? "-------------------"
             print("\(date)  \(item.event.rawValue.padding(toLength: 10, withPad: " ", startingAt: 0))  \(item.url.path)")

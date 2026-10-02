@@ -86,3 +86,8 @@
 "System Default" = "Как в системе";
 "Restart BiuBiu to use the new language." = "Перезапустите BiuBiu, чтобы использовать новый язык.";
 "Restart Now" = "Перезапустить";
+
+/* Folder access */
+"Desktop" = "Рабочий стол";
+"Documents" = "Документы";
+"BiuBiu isn’t allowed to read %@, so those files are missing. Click to allow it in System Settings." = "BiuBiu не может читать %@, поэтому эти файлы не показаны. Нажмите, чтобы разрешить доступ в Системных настройках.";

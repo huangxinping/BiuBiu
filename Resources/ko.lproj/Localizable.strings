@@ -86,3 +86,8 @@
 "System Default" = "시스템 설정 따르기";
 "Restart BiuBiu to use the new language." = "새 언어를 사용하려면 BiuBiu를 재시동하십시오.";
 "Restart Now" = "지금 재시동";
+
+/* Folder access */
+"Desktop" = "데스크탑";
+"Documents" = "문서";
+"BiuBiu isn’t allowed to read %@, so those files are missing. Click to allow it in System Settings." = "BiuBiu에 %@ 읽기 권한이 없어 해당 파일이 표시되지 않습니다. 클릭하여 시스템 설정에서 허용하세요.";

@@ -102,3 +102,8 @@
 "System Default" = "跟随系统";
 "Restart BiuBiu to use the new language." = "重新启动 BiuBiu 后使用新语言。";
 "Restart Now" = "立即重启";
+
+/* Folder access */
+"Desktop" = "桌面";
+"Documents" = "文稿";
+"BiuBiu isn’t allowed to read %@, so those files are missing. Click to allow it in System Settings." = "BiuBiu 没有读取%@的权限，其中的文件不会显示。点按这里在系统设置中允许。";

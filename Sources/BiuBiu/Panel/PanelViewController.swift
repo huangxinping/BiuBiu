@@ -28,6 +28,8 @@ final class PanelViewController: NSViewController {
     private let footerLabel = NSTextField(labelWithString: "")
 
     var spotlightStatus: SpotlightStatus = .searching { didSet { updateBanner(); updateEmptyState() } }
+    /// Protected folders macOS doesn't let BiuBiu read; their files are missing from the list.
+    var blockedFolders: [ProtectedFolder] = [] { didSet { updateBanner() } }
     var hotKeyDisplay: String? { didSet { updateFooter() } }
 
     init(dependencies: Dependencies) {
@@ -65,6 +67,7 @@ final class PanelViewController: NSViewController {
         banner.font = .systemFont(ofSize: 11)
         banner.textColor = .systemOrange
         banner.isHidden = true
+        banner.addGestureRecognizer(NSClickGestureRecognizer(target: self, action: #selector(bannerClicked)))
 
         let column = NSTableColumn(identifier: .init("main"))
         tableView.addTableColumn(column)
@@ -325,13 +328,37 @@ final class PanelViewController: NSViewController {
         }
     }
 
+    private var showsFolderAccessBanner: Bool { transientMessage == nil && !blockedFolders.isEmpty }
+
     private func updateBanner() {
         let spotlightProblem = spotlightStatus == .noResults || spotlightStatus == .failedToStart
-        let text = transientMessage ?? (spotlightProblem
-            ? L("Spotlight found nothing in your home folder. It may be excluded from indexing — check System Settings › Spotlight.")
-            : nil)
+        let text = transientMessage
+            ?? (blockedFolders.isEmpty ? nil : folderAccessMessage)
+            ?? (spotlightProblem
+                ? L("Spotlight found nothing in your home folder. It may be excluded from indexing — check System Settings › Spotlight.")
+                : nil)
         banner.stringValue = text ?? ""
         banner.isHidden = text == nil
+    }
+
+    private var folderAccessMessage: String {
+        let names = blockedFolders.map { folder in
+            switch folder {
+            case .desktop: L("Desktop")
+            case .documents: L("Documents")
+            case .downloads: L("Downloads")
+            }
+        }
+        let list = ListFormatter()
+        list.locale = Locale(identifier: Bundle.main.preferredLocalizations.first ?? "en")
+        return String(format: L("BiuBiu isn’t allowed to read %@, so those files are missing. Click to allow it in System Settings."),
+                      list.string(from: names) ?? names.joined(separator: ", "))
+    }
+
+    @objc private func bannerClicked() {
+        guard showsFolderAccessBanner else { return }
+        deps.close()
+        AppInfo.openFolderAccessSettings()
     }
 
     private func updateEmptyState() {
