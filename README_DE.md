@@ -25,6 +25,8 @@ Die Dateien auf diesen Bildschirmfotos sind erfundene Demo-Daten, erzeugt mit `s
 
    Oder im Terminal: `xattr -dr com.apple.quarantine /Applications/BiuBiu.app`
 
+4. Wenn macOS fragt, ob BiuBiu auf Schreibtisch, Dokumente und Downloads zugreifen darf, klicke auf „Erlauben“, sonst fehlen deren Dateien in der Liste. Falls du „Nicht erlauben“ geklickt hast, klicke auf den orangen Hinweis oben im Panel, um den Zugriff in den Systemeinstellungen einzuschalten.
+
 Alle Versionen sind mit demselben selbstsignierten Zertifikat signiert; Updates behalten die erteilten Berechtigungen.
 
 ## Systemvoraussetzungen

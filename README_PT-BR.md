@@ -25,6 +25,8 @@ Os arquivos destas capturas são dados de demonstração fictícios, gerados por
 
    Ou rode no Terminal: `xattr -dr com.apple.quarantine /Applications/BiuBiu.app`
 
+4. Quando o macOS perguntar se o BiuBiu pode acessar as pastas Mesa, Documentos e Transferências, clique em Permitir; senão, os arquivos delas não aparecem na lista. Se você clicou em Não Permitir, clique no aviso laranja no topo do painel para ativar o acesso nos Ajustes do Sistema.
+
 Todas as versões são assinadas com o mesmo certificado autoassinado, então as atualizações mantêm as permissões concedidas.
 
 ## Requisitos

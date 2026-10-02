@@ -25,6 +25,8 @@ The files in these screenshots are made-up demo data rendered by `scripts/make-s
 
    Or run: `xattr -dr com.apple.quarantine /Applications/BiuBiu.app`
 
+4. When macOS asks whether BiuBiu can access your Desktop, Documents and Downloads folders, click Allow, or their files won’t appear in the list. If you clicked Don’t Allow, click the orange note at the top of the panel to turn access on in System Settings.
+
 Every release is signed with the same self-signed certificate, so updates keep the permissions you granted.
 
 ## Requirements

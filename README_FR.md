@@ -25,6 +25,8 @@ Les fichiers de ces captures sont des données de démonstration fictives géné
 
    Ou dans le Terminal : `xattr -dr com.apple.quarantine /Applications/BiuBiu.app`
 
+4. Quand macOS demande si BiuBiu peut accéder aux dossiers Bureau, Documents et Téléchargements, cliquez sur Autoriser, sinon leurs fichiers n’apparaîtront pas dans la liste. Si vous avez cliqué sur Ne pas autoriser, cliquez sur le message orange en haut du panneau pour activer l’accès dans Réglages Système.
+
 Chaque version est signée avec le même certificat auto-signé : les mises à jour conservent les autorisations accordées.
 
 ## Configuration requise
