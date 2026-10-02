@@ -91,3 +91,4 @@
 "Desktop" = "Bureau";
 "Documents" = "Documents";
 "BiuBiu isn’t allowed to read %@, so those files are missing. Click to allow it in System Settings." = "BiuBiu n’est pas autorisé à lire %@ : ces fichiers manquent. Cliquez pour l’autoriser dans Réglages Système.";
+"Couldn’t open “%@”" = "Impossible d’ouvrir « %@ »";

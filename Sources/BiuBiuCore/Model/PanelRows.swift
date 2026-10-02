@@ -13,6 +13,14 @@ package enum PanelRow: Hashable, Sendable {
         }
     }
 
+    package var displayName: String? {
+        switch self {
+        case .pinned(let entry): entry.displayName
+        case .item(let item): item.displayName
+        case .pinnedHeader, .sectionHeader: nil
+        }
+    }
+
     /// Where the row points to, if it points anywhere.
     package var url: URL? {
         switch self {

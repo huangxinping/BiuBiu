@@ -107,3 +107,4 @@
 "Desktop" = "桌面";
 "Documents" = "文稿";
 "BiuBiu isn’t allowed to read %@, so those files are missing. Click to allow it in System Settings." = "BiuBiu 没有读取%@的权限，其中的文件不会显示。点按这里在系统设置中允许。";
+"Couldn’t open “%@”" = "无法打开“%@”";

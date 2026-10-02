@@ -260,11 +260,16 @@ final class PanelViewController: NSViewController {
 
     func openSelected() {
         guard let row = selectedPanelRow else { return }
-        guard let url = row.url, ItemActions.open(url) else {
+        guard let url = row.url else { return handleMissing(row) }
+        switch ItemActions.open(url) {
+        case .opened:
+            deps.close()
+        case .missing:
             handleMissing(row)
-            return
+        case .failed:
+            NSSound.beep()
+            showMessage(String(format: L("Couldn’t open “%@”"), row.displayName ?? url.lastPathComponent))
         }
-        deps.close()
     }
 
     func revealSelected() {
@@ -285,11 +290,7 @@ final class PanelViewController: NSViewController {
         case .pinned(let entry):
             deps.pinStore.unpin(path: entry.pin.path)
         case .item(let item):
-            if deps.pinStore.isPinned(path: item.url.path) {
-                deps.pinStore.unpin(path: item.url.path)
-            } else {
-                do { try deps.pinStore.pin(url: item.url) } catch { showMessage(error.localizedDescription) }
-            }
+            do { _ = try deps.pinStore.togglePin(url: item.url) } catch { showMessage(error.localizedDescription) }
         case .pinnedHeader, .sectionHeader:
             return
         }

@@ -27,8 +27,10 @@ package struct TimelineSection: Hashable, Sendable {
 package final class ActivityStore {
     package var ignoreRules: IgnoreRules { didSet { recompute() } }
     package var timeWindowDays: Int { didSet { onChange?() } }
-    package var category: ActivityCategory = .all { didSet { onChange?() } }
-    package var searchText = "" { didSet { onChange?() } }
+    /// The panel's own filters. Changing them does not call `onChange`: the panel reloads itself.
+    package var category: ActivityCategory = .all
+    package var searchText = ""
+    /// Called when the data changed (a source update, the ignore rules or the time window).
     package var onChange: (() -> Void)?
 
     /// Merged, de-duplicated, ignore-filtered, newest first. Not capped, so every category keeps its items.

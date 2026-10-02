@@ -72,6 +72,39 @@ enum PinStoreTests {
             store.unpin(path: a.path)
             expectEqual(PinStore(fileURL: file).pins.count, 0)
         },
+        TestCase("PinStore: pinning a renamed file again does not duplicate it, and toggling unpins it") {
+            // The panel shows the new name from Spotlight while the pin still remembers the old path.
+            let dir = try makeTempDirectory()
+            defer { try? FileManager.default.removeItem(at: dir) }
+            let a = dir.appendingPathComponent("a.txt"), renamed = dir.appendingPathComponent("renamed.txt")
+            try Data("x".utf8).write(to: a)
+            let store = PinStore(fileURL: dir.appendingPathComponent("pins.json"))
+            try store.pin(url: a)
+            try FileManager.default.moveItem(at: a, to: renamed)
+            try store.pin(url: renamed)
+            expectEqual(store.pins.count, 1)
+            expectEqual(store.pins.first?.path, renamed.path)
+            expectEqual(try store.togglePin(url: renamed), false)
+            expectEqual(store.pins.count, 0)
+            expectEqual(try store.togglePin(url: renamed), true)
+            expectEqual(store.pins.count, 1)
+        },
+        TestCase("PinStore: an unreadable pins file is never overwritten") {
+            let dir = try makeTempDirectory()
+            defer { try? FileManager.default.removeItem(at: dir) }
+            let file = dir.appendingPathComponent("pins.json")
+            let original = Data("[]".utf8)
+            try original.write(to: file)
+            try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: file.path)
+            defer { try? FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: file.path) }
+            let a = dir.appendingPathComponent("a.txt")
+            try Data().write(to: a)
+            let store = PinStore(fileURL: file)
+            expectEqual(store.pins.count, 0)
+            try store.pin(url: a)
+            try FileManager.default.setAttributes([.posixPermissions: 0o644], ofItemAtPath: file.path)
+            expectEqual(try Data(contentsOf: file), original)
+        },
         TestCase("PinStore: corrupt file is backed up and replaced by an empty list") {
             let dir = try makeTempDirectory()
             defer { try? FileManager.default.removeItem(at: dir) }

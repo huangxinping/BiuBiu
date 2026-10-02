@@ -2,10 +2,17 @@ import AppKit
 
 @MainActor
 enum ItemActions {
-    /// Returns false when the item is gone.
-    static func open(_ url: URL) -> Bool {
-        guard FileManager.default.fileExists(atPath: url.path) else { return false }
-        return NSWorkspace.shared.open(url)
+    enum OpenResult {
+        case opened
+        /// The file no longer exists.
+        case missing
+        /// The file is there but macOS would not open it (no app for it, Gatekeeper refused, …).
+        case failed
+    }
+
+    static func open(_ url: URL) -> OpenResult {
+        guard FileManager.default.fileExists(atPath: url.path) else { return .missing }
+        return NSWorkspace.shared.open(url) ? .opened : .failed
     }
 
     static func open(_ url: URL, withApplicationAt app: URL) {

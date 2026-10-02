@@ -91,3 +91,4 @@
 "Desktop" = "데스크탑";
 "Documents" = "문서";
 "BiuBiu isn’t allowed to read %@, so those files are missing. Click to allow it in System Settings." = "BiuBiu에 %@ 읽기 권한이 없어 해당 파일이 표시되지 않습니다. 클릭하여 시스템 설정에서 허용하세요.";
+"Couldn’t open “%@”" = "‘%@’을(를) 열 수 없습니다";

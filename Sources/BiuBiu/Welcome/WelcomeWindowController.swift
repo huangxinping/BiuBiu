@@ -34,6 +34,8 @@ final class WelcomeWindowController: NSWindowController, NSWindowDelegate {
             ?? L("Click the menu bar icon to open it.")
         let shortcutLabel = NSTextField(wrappingLabelWithString: shortcutText)
         launchCheckbox.state = LaunchAtLogin.isEnabled ? .on : .off
+        launchCheckbox.target = self
+        launchCheckbox.action = #selector(launchToggled)
         let done = NSButton(title: L("Get Started"), target: self, action: #selector(finish))
         done.keyEquivalent = "\r"
 
@@ -77,22 +79,27 @@ final class WelcomeWindowController: NSWindowController, NSWindowDelegate {
         NSWorkspace.shared.open(URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_AllFiles")!)
     }
 
+    /// Applied right away, like in Settings, so a failure can be shown while the window is still there.
+    @objc private func launchToggled() {
+        do {
+            try LaunchAtLogin.setEnabled(launchCheckbox.state == .on)
+        } catch {
+            launchCheckbox.state = LaunchAtLogin.isEnabled ? .on : .off
+            let alert = NSAlert()
+            alert.messageText = L("Open BiuBiu at login")
+            alert.informativeText = error.localizedDescription
+            if let window { alert.beginSheetModal(for: window) } else { alert.runModal() }
+        }
+    }
+
     @objc private func finish() {
         close()
     }
 
-    /// "Get Started" and the window's close button end the same way: keep the login choice, then hand back.
+    /// "Get Started" and the window's close button end the same way.
     func windowWillClose(_ notification: Notification) {
         guard !didFinish else { return }
         didFinish = true
-        let wanted = launchCheckbox.state == .on
-        if wanted != LaunchAtLogin.isEnabled {
-            do {
-                try LaunchAtLogin.setEnabled(wanted)
-            } catch {
-                Log.app.error("Open at login could not be changed: \(error.localizedDescription, privacy: .public)")
-            }
-        }
         onDone()
     }
 }

@@ -97,13 +97,17 @@ enum ActivityStoreTests {
             store.update(sourceID: "a", items: [file("/Users/me/a.txt", -5)])
             expectEqual(store.allItems.count, 1)
         },
-        TestCase("Store: onChange fires for updates and filter changes") {
+        TestCase("Store: onChange fires for data changes, not for the panel's own filter changes") {
+            // The panel sets category and search text and reloads itself; a notification would reload it twice.
             let store = makeStore()
             var calls = 0
             store.onChange = { calls += 1 }
             store.update(sourceID: "a", items: [])
             store.searchText = "x"
             store.category = .files
+            expectEqual(calls, 1)
+            store.timeWindowDays = 1
+            store.ignoreRules = IgnoreRules(rules: [], ignoreHidden: false)
             expectEqual(calls, 3)
         },
     ] }

@@ -103,6 +103,30 @@ enum ActivityClassifierTests {
                                              whereFroms: ["https://a.com/x.png"]))
             expect(item?.isDownload == false)
         },
+        TestCase("Classifier: a folder in Downloads is added, not downloaded, but stays in the Downloads category") {
+            // An unzipped archive: folders are only ever opened or added (spec §4, item 4).
+            let item = classify(FileMetadata(path: "/Users/me/Downloads/Assets", isFolder: true, dateAdded: at(200)))
+            expectEqual(item?.event, .added)
+            expect(item?.isDownload == true)
+        },
+        TestCase("Classifier: dates in the future are ignored so a real open still shows") {
+            // Spotlight does return modification dates years ahead (bad camera clocks, restored backups).
+            let now = at(1000)
+            let item = ActivityClassifier.classify(
+                FileMetadata(path: "/Users/me/a.pdf", isFolder: false, lastUsed: at(900), contentModified: at(99_999_999)),
+                since: since, downloadsPath: downloads, now: now)
+            expectEqual(item?.event, .opened)
+            expectEqual(item?.date, at(900))
+            let onlyFuture = ActivityClassifier.classify(
+                FileMetadata(path: "/Users/me/b.pdf", isFolder: false, contentModified: at(99_999_999)),
+                since: since, downloadsPath: downloads, now: now)
+            expect(onlyFuture == nil)
+            // A few seconds ahead is clock jitter, not a bad date.
+            let jitter = ActivityClassifier.classify(
+                FileMetadata(path: "/Users/me/c.pdf", isFolder: false, contentModified: at(1001)),
+                since: since, downloadsPath: downloads, now: now)
+            expectEqual(jitter?.event, .saved)
+        },
         TestCase("Classifier: host skips where-froms that are not URLs") {
             expectEqual(ActivityClassifier.host(from: ["not a url", "https://b.org/x"]), "b.org")
             expect(ActivityClassifier.host(from: []) == nil)

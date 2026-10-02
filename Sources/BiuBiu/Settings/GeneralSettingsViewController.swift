@@ -155,13 +155,17 @@ final class GeneralSettingsViewController: NSViewController {
         setMessageRow(Self.restartRow, label: restartNote, visible: true)
     }
 
-    /// Opens a fresh copy of the app, then quits this one, so macOS applies the new language.
+    /// Quits, and has `open` (a separate process that outlives this one) start a fresh copy, so macOS
+    /// applies the new language. Quitting first keeps the overlap short: the new copy registers the
+    /// shortcut and the menu bar item while this one is on its way out.
     @objc private func restartNow() {
-        let configuration = NSWorkspace.OpenConfiguration()
-        configuration.createsNewApplicationInstance = true
-        NSWorkspace.shared.openApplication(at: Bundle.main.bundleURL, configuration: configuration) { _, _ in
-            Task { @MainActor in NSApp.terminate(nil) }
+        if Bundle.main.bundleURL.pathExtension == "app" {
+            let open = Process()
+            open.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+            open.arguments = ["-n", Bundle.main.bundleURL.path]
+            try? open.run()
         }
+        NSApp.terminate(nil)
     }
 
     @objc private func windowChanged() {

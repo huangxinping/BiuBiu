@@ -32,6 +32,7 @@ package final class PinStore {
     package private(set) var pins: [Pin] = []
     private let fileURL: URL
     private var cachedEntries: [PinnedEntry]?
+    private var saveBlocked = false
     private let now: () -> Date
 
     package static func defaultFileURL() -> URL {
@@ -49,7 +50,26 @@ package final class PinStore {
         pins.contains { $0.path == path }
     }
 
+    /// Pins the file, or does nothing when it already is (under this or an earlier name).
     package func pin(url: URL) throws {
+        _ = entries(refresh: true)
+        try addPin(url: url)
+    }
+
+    /// Pins the file if it is not pinned, unpins it if it is. Returns whether it is pinned afterwards.
+    /// Resolves the pins first so a file renamed in Finder is recognized under its new name.
+    package func togglePin(url: URL) throws -> Bool {
+        _ = entries(refresh: true)
+        let path = url.standardizedFileURL.path
+        if isPinned(path: path) {
+            unpin(path: path)
+            return false
+        }
+        try addPin(url: url)
+        return true
+    }
+
+    private func addPin(url: URL) throws {
         let path = url.standardizedFileURL.path
         guard !isPinned(path: path) else { return }
         let bookmark = try url.bookmarkData(options: [], includingResourceValuesForKeys: nil, relativeTo: nil)
@@ -100,7 +120,16 @@ package final class PinStore {
     }
 
     private func load() {
-        guard let data = try? Data(contentsOf: fileURL) else { return }
+        guard FileManager.default.fileExists(atPath: fileURL.path) else { return }
+        let data: Data
+        do {
+            data = try Data(contentsOf: fileURL)
+        } catch {
+            // The pins are there but unreadable right now; saving would replace them with an empty list.
+            saveBlocked = true
+            Log.persistence.error("pins.json could not be read, pins will not be saved this session: \(error.localizedDescription, privacy: .public)")
+            return
+        }
         do {
             pins = try JSONDecoder().decode([Pin].self, from: data)
         } catch {
@@ -113,6 +142,7 @@ package final class PinStore {
     }
 
     private func save() {
+        guard !saveBlocked else { return }
         do {
             try FileManager.default.createDirectory(at: fileURL.deletingLastPathComponent(), withIntermediateDirectories: true)
             let encoder = JSONEncoder()
