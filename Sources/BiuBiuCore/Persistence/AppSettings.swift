@@ -81,6 +81,26 @@ package final class AppSettings {
         }
     }
 
+    /// The language the user picked, or nil to follow the system. macOS reads the app's AppleLanguages at
+    /// launch, so a change takes effect the next time BiuBiu starts. The choice is also kept under its own
+    /// key: reading AppleLanguages back would return the system's languages when the user picked none.
+    package var languageOverride: String? {
+        get {
+            guard let code = defaults.string(forKey: "languageOverride"),
+                  AppLanguage.supported.contains(where: { $0.code == code }) else { return nil }
+            return code
+        }
+        set {
+            if let newValue {
+                defaults.set(newValue, forKey: "languageOverride")
+                defaults.set([newValue], forKey: "AppleLanguages")
+            } else {
+                defaults.removeObject(forKey: "languageOverride")
+                defaults.removeObject(forKey: "AppleLanguages")
+            }
+        }
+    }
+
     package var ignoreRules: IgnoreRules {
         get {
             guard let data = defaults.data(forKey: Key.ignoreRules),

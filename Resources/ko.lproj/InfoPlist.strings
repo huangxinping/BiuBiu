@@ -1,0 +1,4 @@
+/* Privacy purpose strings shown in macOS access prompts. */
+"NSDesktopFolderUsageDescription" = "BiuBiu는 데스크탑에서 최근에 열거나 저장하거나 다운로드한 파일을 표시합니다.";
+"NSDocumentsFolderUsageDescription" = "BiuBiu는 문서 폴더에서 최근에 열거나 저장하거나 다운로드한 파일을 표시합니다.";
+"NSDownloadsFolderUsageDescription" = "BiuBiu는 최근에 다운로드한 파일을 표시합니다.";

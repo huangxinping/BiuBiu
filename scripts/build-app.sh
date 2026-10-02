@@ -24,7 +24,7 @@ cp "$BIN_DIR/BiuBiu" "$APP/Contents/MacOS/BiuBiu"
 sed -e "s|__VERSION__|$VERSION|" -e "s|__BUILD__|$BUILD_NUMBER|" -e "s|__REPO_URL__|$REPO_URL|" \
   Resources/Info.plist > "$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist" >/dev/null
-cp -R Resources/en.lproj Resources/zh-Hans.lproj "$APP/Contents/Resources/"
+cp -R Resources/*.lproj "$APP/Contents/Resources/"
 if [[ -f Resources/AppIcon.icns ]]; then
   cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 fi

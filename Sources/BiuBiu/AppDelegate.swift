@@ -121,6 +121,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     guard let self else { return }
                     self.settings.hiddenCategories = hidden
                     self.panelController?.viewController.reloadCategories()
+                },
+                languageChanged: { [weak self] code in
+                    self?.settings.languageOverride = code
                 }
             ))
             let ignore = IgnoreRulesViewController(rules: settings.ignoreRules) { [weak self] rules in

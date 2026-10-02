@@ -11,6 +11,26 @@ enum SettingsAndHotKeyTests {
     }
 
     static var tests: [TestCase] { [
+        TestCase("Settings: language follows the system until the user picks one") {
+            let d = freshDefaults()
+            let s = AppSettings(defaults: d)
+            expect(s.languageOverride == nil)
+            s.languageOverride = "ja"
+            expectEqual(s.languageOverride, "ja")
+            // macOS picks the app's language from AppleLanguages at launch.
+            expectEqual(d.stringArray(forKey: "AppleLanguages"), ["ja"])
+            s.languageOverride = nil
+            expect(s.languageOverride == nil)
+            // Back to the system's list (the global AppleLanguages), not the app's own copy.
+            expect(d.stringArray(forKey: "AppleLanguages") != ["ja"])
+            d.set("xx", forKey: "languageOverride")
+            expect(s.languageOverride == nil, "an unsupported language reads as following the system")
+        },
+        TestCase("Languages: ten languages, English first, each named in itself") {
+            expectEqual(AppLanguage.supported.map(\.code),
+                        ["en", "zh-Hans", "zh-Hant", "ja", "ko", "de", "fr", "es", "pt-BR", "ru"])
+            expectEqual(AppLanguage.supported.first { $0.code == "ja" }?.nativeName, "日本語")
+        },
         TestCase("HotKey: key names can be localized for display") {
             let combo = HotKeyCombo(keyCode: 49, modifiers: [.control, .option])
             expectEqual(combo.displayString(localizingKeyName: { $0 == "Space" ? "空格" : $0 }), "⌃⌥空格")

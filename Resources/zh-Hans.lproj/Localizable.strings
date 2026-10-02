@@ -96,3 +96,9 @@
 "To list files from your Desktop, Documents and Downloads, BiuBiu needs Full Disk Access. Turn on BiuBiu in the list that opens." = "要列出“桌面”“文稿”和“下载”中的文件，BiuBiu 需要“完全磁盘访问权限”。请在打开的列表中开启 BiuBiu。";
 "Open Privacy Settings…" = "打开隐私设置…";
 "Space" = "空格";
+
+/* Language */
+"Language:" = "语言：";
+"System Default" = "跟随系统";
+"Restart BiuBiu to use the new language." = "重新启动 BiuBiu 后使用新语言。";
+"Restart Now" = "立即重启";
