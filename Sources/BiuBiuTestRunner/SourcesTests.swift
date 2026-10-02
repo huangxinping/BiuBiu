@@ -55,6 +55,24 @@ enum SourcesTests {
             expect(records.allSatisfy { $0.string(NSMetadataItemCFBundleIdentifierKey)?.isEmpty == false },
                    "bundle identifier was not collected")
         },
+        TestCase("Apps: the newer of installed and opened wins, a tie goes to installed") {
+            let since = Date(timeIntervalSince1970: 1_000), now = since.addingTimeInterval(10_000)
+            func at(_ s: TimeInterval) -> Date { since.addingTimeInterval(s) }
+            let opened = AppSource.item(path: "/Applications/Figma.app", dateAdded: at(10), lastUsed: at(500), since: since, now: now)
+            expectEqual(opened?.event, .opened)
+            expectEqual(opened?.date, at(500))
+            expectEqual(opened?.displayName, "Figma")
+            expectEqual(opened?.kind, .application)
+            let updated = AppSource.item(path: "/Applications/Figma.app", dateAdded: at(900), lastUsed: at(500), since: since, now: now)
+            expectEqual(updated?.event, .installed)
+            let tie = AppSource.item(path: "/Applications/Figma.app", dateAdded: at(500), lastUsed: at(501), since: since, now: now)
+            expectEqual(tie?.event, .installed)
+            expect(AppSource.item(path: "/Applications/Old.app", dateAdded: at(-5), lastUsed: at(-9), since: since, now: now) == nil)
+            expect(AppSource.item(path: "/Applications/Never.app", dateAdded: nil, lastUsed: nil, since: since, now: now) == nil)
+            // A last-used date in the future is ignored; the install still counts.
+            let future = AppSource.item(path: "/Applications/F.app", dateAdded: at(10), lastUsed: at(99_999_999), since: since, now: now)
+            expectEqual(future?.event, .installed)
+        },
         TestCase("Sources: apps in ~/Applications are left to the app source, others stay files") {
             let apps = "/Users/me/Applications/"
             expect(SpotlightFileSource.isLeftToAppSource(contentType: "com.apple.application-bundle",

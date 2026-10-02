@@ -6,7 +6,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let settings = AppSettings(defaults: .standard)
     private let pinStore = PinStore(fileURL: PinStore.defaultFileURL())
     private let fileSource = SpotlightFileSource()
-    private let appSource = AppInstallSource()
+    private let appSource = AppSource()
     private let volumeSource = VolumeSource()
     private let hotKeys = HotKeyCenter()
     private lazy var store = ActivityStore(ignoreRules: settings.ignoreRules,

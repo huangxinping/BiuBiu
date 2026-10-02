@@ -2,7 +2,7 @@
 
 **English** · [简体中文](README_CN.md) · [繁體中文](README_TW.md) · [日本語](README_JA.md) · [한국어](README_KO.md) · [Deutsch](README_DE.md) · [Français](README_FR.md) · [Español](README_ES.md) · [Português (Brasil)](README_PT-BR.md) · [Русский](README_RU.md)
 
-BiuBiu is a menu bar app for macOS that shows the files and folders you recently opened, saved or downloaded, plus newly installed apps and connected drives. Press `⌥⌘R` (configurable) anywhere, including full-screen apps.
+BiuBiu is a menu bar app for macOS that shows the files and folders you recently opened, saved or downloaded, plus the apps you recently opened or installed, and connected drives. Press `⌥⌘R` (configurable) anywhere, including full-screen apps.
 
 - Built on the Spotlight index; everything stays on your Mac
 - Click to open, `⌘↩` to show in Finder, Space or `⌘Y` to Quick Look, or drag items into other apps

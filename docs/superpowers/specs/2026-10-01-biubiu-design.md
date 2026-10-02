@@ -5,7 +5,7 @@
 
 ## 1. 目标与背景
 
-BiuBiu 是一款常驻 macOS 菜单栏的近期文件快速访问工具。按下快捷键（或点击菜单栏图标）后弹出一个简洁面板，按时间倒序列出最近打开、保存、下载的文件与文件夹，以及最近安装的应用和新连接的外置磁盘。
+BiuBiu 是一款常驻 macOS 菜单栏的近期文件快速访问工具。按下快捷键（或点击菜单栏图标）后弹出一个简洁面板，按时间倒序列出最近打开、保存、下载的文件与文件夹，以及最近打开或安装的应用和新连接的外置磁盘。
 
 要解决的问题：文件刚保存或刚下载后就找不到了。Finder 的"最近使用"不够聚焦，BiuBiu 专门为"立刻回到刚才在处理的内容"而设计。
 
@@ -54,7 +54,7 @@ BiuBiu 是一款常驻 macOS 菜单栏的近期文件快速访问工具。按下
 │ ActivityStore（合并、去重、过滤、排序、分组）      │
 └──┬──────────┬──────────┬──────────┬─────────┘
    │          │          │          │
-SpotlightFileSource  AppInstallSource  VolumeSource  PinStore
+SpotlightFileSource  AppSource  VolumeSource  PinStore
    │          │          │
    └──── ActivitySource 协议 ────┘
                     │
@@ -101,8 +101,8 @@ protocol ActivitySource: AnyObject {
 
 ### 3.3 模块职责
 
-- **SpotlightFileSource**：在主目录范围内持续查询（`NSMetadataQueryUserHomeScope`）。查询条件见 4.2。把 Spotlight 返回的结果转换成 `ActivityItem`。`~/Applications` 里的 app 跳过不报，交给 AppInstallSource，否则同一个 app 会以"文件 · 新增"的形式出现。
-- **AppInstallSource**：在 `/Applications` 和 `~/Applications` 中查询内容类型为 `com.apple.application-bundle`，并且"加入文件夹"时间（`kMDItemDateAdded`）落在时间范围内的项目。
+- **SpotlightFileSource**：在主目录范围内持续查询（`NSMetadataQueryUserHomeScope`）。查询条件见 4.2。把 Spotlight 返回的结果转换成 `ActivityItem`。`~/Applications` 里的 app 跳过不报，交给 AppSource，否则同一个 app 会以"文件 · 新增"的形式出现。
+- **AppSource**：在 `/Applications`、`~/Applications` 和 `/System/Applications` 中查询内容类型为 `com.apple.application-bundle`，并且"加入文件夹"时间（`kMDItemDateAdded`）或"最近打开时间"（`kMDItemLastUsedDate`）落在时间范围内的项目。两者取较新的一个决定事件：`installed` 或 `opened`。打开过的 app 只出现在"应用"分类里，不进入"全部"：常用 app 每天都会启动，混进时间线会把文件淹没（2026-10-02 按用户反馈增加"最近打开的应用"）。
 - **VolumeSource**：启动时读取当前已挂载的卷，之后监听系统的挂载和推出通知。只保留可移除、可推出或网络类型的卷。挂载时间只在运行期间收到通知时记录；启动前已经接上的卷，`date` 为 nil。负责执行推出操作。
 - **ActivityStore**（`@MainActor` 的普通类，数据变化时调用 `onChange` 回调通知界面刷新）：合并各数据源结果；同一 URL 只保留 `date` 最新的一条；套用 `IgnoreRules`；按日期倒序排列（不截断）；根据时间范围、搜索词和当前分类筛选，筛选结果最多显示 500 条（先筛选再截断，保证"下载"等分类不会被其他分类的大量条目挤掉）；按时间分组。时钟可注入。
 - **IgnoreRules**：规则分三种：路径前缀、路径中包含的片段、扩展名。另有一个"忽略隐藏文件"开关。提供默认规则（见 4.3）和"恢复默认"。保存在 `UserDefaults` 中。
