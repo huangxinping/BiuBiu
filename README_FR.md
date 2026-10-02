@@ -8,6 +8,12 @@ BiuBiu est une app de la barre des menus pour macOS qui affiche les fichiers et 
 - Cliquez pour ouvrir, `⌘↩` pour afficher dans le Finder, Espace ou `⌘Y` pour Coup d’œil, ou faites glisser vers d’autres apps
 - Épinglez vos favoris ; ignorez les fichiers, dossiers ou extensions que vous ne voulez jamais voir
 
+<p align="center"><img src="docs/images/biubiu-teaser.gif" width="720" alt="Appuyez sur ⌥⌘R n’importe où : biu biu, et tout ce que vous avez touché récemment apparaît dans une seule chronologie"></p>
+
+La vidéo complète (en anglais, avec le son, 55 s) :
+
+https://github.com/user-attachments/assets/1c2f0163-6016-40a7-a11d-a75bfeea4a53
+
 <p align="center"><img src="docs/images/panel-fr.jpg" width="640" alt="Le panneau BiuBiu : éléments épinglés et activité récente groupée par date"></p>
 
 <p align="center">

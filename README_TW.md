@@ -8,6 +8,12 @@ BiuBiu 是常駐 macOS 選單列的近期檔案快速存取工具。按下快速
 - 按一下打開；`⌘↩` 在 Finder 中顯示；空白鍵或 `⌘Y` 快速查看；直接拖到其他 App
 - 釘選常用的檔案和檔案夾；把不想看到的檔案、檔案夾或副檔名加入忽略列表
 
+<p align="center"><img src="docs/images/biubiu-teaser.gif" width="720" alt="在任何地方按 ⌥⌘R：biu biu，最近接觸過的所有檔案都出現在同一條時間線上"></p>
+
+完整影片（英文，有聲音，55 秒）：
+
+https://github.com/user-attachments/assets/1c2f0163-6016-40a7-a11d-a75bfeea4a53
+
 <p align="center"><img src="docs/images/panel-zh-Hant.jpg" width="640" alt="BiuBiu 面板：釘選區和依時間分組的最近項目"></p>
 
 <p align="center">

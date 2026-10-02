@@ -8,6 +8,12 @@ BiuBiu는 macOS 메뉴 막대에 머무는 최근 파일 빠른 접근 앱입니
 - 클릭해서 열기, `⌘↩`로 Finder에서 보기, 스페이스 또는 `⌘Y`로 훑어보기, 다른 앱으로 바로 드래그
 - 자주 쓰는 파일과 폴더를 고정하고, 보고 싶지 않은 파일·폴더·확장자는 무시 목록에 추가
 
+<p align="center"><img src="docs/images/biubiu-teaser.gif" width="720" alt="어디서나 ⌥⌘R을 누르면 biu biu, 최근에 다룬 모든 항목이 하나의 타임라인에 나타납니다"></p>
+
+전체 영상(영어, 소리 있음, 55초):
+
+https://github.com/user-attachments/assets/1c2f0163-6016-40a7-a11d-a75bfeea4a53
+
 <p align="center"><img src="docs/images/panel-ko.jpg" width="640" alt="BiuBiu 패널: 고정 항목과 시간별로 묶인 최근 항목"></p>
 
 <p align="center">

@@ -8,6 +8,12 @@ BiuBiu 是一个常驻 macOS 菜单栏的近期文件快速访问工具。按下
 - 单击打开；`⌘↩` 在 Finder 中显示；空格或 `⌘Y` 快速预览；直接拖到其他 app
 - 置顶常用的文件和文件夹；把不想看到的文件、文件夹或扩展名加入忽略列表
 
+<p align="center"><img src="docs/images/biubiu-teaser.gif" width="720" alt="在任何地方按 ⌥⌘R：biu biu，最近接触过的所有文件都出现在同一条时间线上"></p>
+
+完整视频（英文，有声音，55 秒）：
+
+https://github.com/user-attachments/assets/1c2f0163-6016-40a7-a11d-a75bfeea4a53
+
 <p align="center"><img src="docs/images/panel-zh-Hans.jpg" width="640" alt="BiuBiu 面板：置顶区和按时间分组的最近项目"></p>
 
 <p align="center">

@@ -8,6 +8,12 @@ BiuBiu は macOS のメニューバーに常駐する、最近のファイルに
 - クリックで開く、`⌘↩` で Finder に表示、スペースまたは `⌘Y` でクイックルック、ほかのアプリへそのままドラッグ
 - よく使うファイルやフォルダをピン留め。見たくないファイル・フォルダ・拡張子は無視リストへ
 
+<p align="center"><img src="docs/images/biubiu-teaser.gif" width="720" alt="どこでも ⌥⌘R を押すと、biu biu、最近触れたものがすべてひとつのタイムラインに"></p>
+
+フル動画（英語・音声あり・55 秒）：
+
+https://github.com/user-attachments/assets/1c2f0163-6016-40a7-a11d-a75bfeea4a53
+
 <p align="center"><img src="docs/images/panel-ja.jpg" width="640" alt="BiuBiu のパネル：ピン留めと時間ごとに分けた最近の項目"></p>
 
 <p align="center">

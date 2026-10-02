@@ -8,6 +8,12 @@ BiuBiu ist eine Menüleisten-App für macOS, die die Dateien und Ordner zeigt, d
 - Klicken zum Öffnen, `⌘↩` zum Zeigen im Finder, Leertaste oder `⌘Y` für die Übersicht, oder Objekte direkt in andere Apps ziehen
 - Favoriten anheften; Dateien, Ordner oder Endungen ignorieren, die du nie sehen willst
 
+<p align="center"><img src="docs/images/biubiu-teaser.gif" width="720" alt="Drücke überall ⌥⌘R: biu biu, und alles, was du zuletzt angefasst hast, erscheint in einer Zeitleiste"></p>
+
+Das ganze Video (Englisch, mit Ton, 55 s):
+
+https://github.com/user-attachments/assets/1c2f0163-6016-40a7-a11d-a75bfeea4a53
+
 <p align="center"><img src="docs/images/panel-de.jpg" width="640" alt="Das BiuBiu-Fenster: angeheftete Objekte und letzte Aktivitäten nach Zeit"></p>
 
 <p align="center">
