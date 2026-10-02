@@ -8,5 +8,7 @@ let package = Package(
         .target(name: "BiuBiuCore"),
         .executableTarget(name: "BiuBiu", dependencies: ["BiuBiuCore"]),
         .executableTarget(name: "BiuBiuTestRunner", dependencies: ["BiuBiuCore"]),
+        // Renders the README promo video; not part of the app. See scripts/make-promo.sh.
+        .executableTarget(name: "BiuBiuPromo"),
     ]
 )

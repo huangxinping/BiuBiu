@@ -8,6 +8,10 @@ if let index = CommandLine.arguments.firstIndex(of: "--screenshots"), CommandLin
     ScreenshotMode.run(outputDirectory: URL(fileURLWithPath: CommandLine.arguments[index + 1]))
 }
 
+if let index = CommandLine.arguments.firstIndex(of: "--promo-sprites"), CommandLine.arguments.count > index + 1 {
+    PromoSpritesMode.run(outputDirectory: URL(fileURLWithPath: CommandLine.arguments[index + 1]))
+}
+
 let app = NSApplication.shared
 let delegate = AppDelegate()
 app.delegate = delegate

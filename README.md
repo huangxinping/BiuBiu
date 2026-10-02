@@ -8,6 +8,8 @@ BiuBiu is a menu bar app for macOS that shows the files and folders you recently
 - Click to open, `⌘↩` to show in Finder, Space or `⌘Y` to Quick Look, or drag items into other apps
 - Pin favorites; ignore files, folders or extensions you never want to see
 
+<p align="center"><img src="docs/images/biubiu-teaser.gif" width="720" alt="Press ⌥⌘R anywhere: biu biu, and everything you recently touched appears in one timeline"></p>
+
 <p align="center"><img src="docs/images/panel-en.jpg" width="640" alt="The BiuBiu panel: pinned items and recent activity grouped by time"></p>
 
 <p align="center">
@@ -58,6 +60,7 @@ scripts/build-app.sh         # package dist/BiuBiu.app and a zip (ad-hoc signed)
 - GitHub secrets: `SIGNING_P12_BASE64` (the `.p12`, base64) and `SIGNING_P12_PASSWORD`.
 - Release: push a `vX.Y.Z` tag on `main`; `release.yml` tests, signs, and publishes `BiuBiu-X.Y.Z.zip`.
 - Screenshots: `scripts/make-screenshots.sh` renders the UI offscreen from made-up demo files into `docs/images/`, one set per language (your terminal needs Screen Recording permission and the display must be awake).
+- Promo video: `scripts/make-promo.sh` renders `dist/biubiu-promo.mp4` and the README teaser `docs/images/biubiu-teaser.gif` from the real panel and made-up demo files, with a synthesized soundtrack (needs ffmpeg). GitHub only plays videos it hosts, so upload the MP4 by dragging it into an issue or the README editor on github.com and paste the `user-attachments` URL it gives into README.md.
 - Translations live in `Resources/<language>.lproj/`. A test fails if any language misses a string or changes its placeholders.
 
 ## License

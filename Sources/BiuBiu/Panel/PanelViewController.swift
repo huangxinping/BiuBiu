@@ -27,6 +27,9 @@ final class PanelViewController: NSViewController {
     private let emptyLabel = NSTextField(labelWithString: "")
     private let footerLabel = NSTextField(labelWithString: "")
 
+    /// For the promo sprites, which point at the tabs.
+    var segmentsFrameInView: NSRect { segments.convert(segments.bounds, to: view) }
+
     var spotlightStatus: SpotlightStatus = .searching { didSet { updateBanner(); updateEmptyState() } }
     /// Protected folders macOS doesn't let BiuBiu read; their files are missing from the list.
     var blockedFolders: [ProtectedFolder] = [] { didSet { updateBanner() } }

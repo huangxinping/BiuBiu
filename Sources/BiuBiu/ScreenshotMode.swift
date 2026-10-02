@@ -116,14 +116,14 @@ enum ScreenshotMode {
         exit(0)
     }
 
-    private static func offscreen(_ window: NSWindow) {
+    static func offscreen(_ window: NSWindow) {
         window.setFrameOrigin(NSPoint(x: -6000, y: -6000))
         window.orderFrontRegardless()
     }
 
     /// Draws a view in-process at 2x. screencapture cannot grab a borderless offscreen window, and the
     /// panel's frosted material does not draw this way, so the panel backdrop is painted underneath.
-    private static func render(_ view: NSView) -> NSImage {
+    static func render(_ view: NSView, backdrop: NSColor = NSColor(calibratedWhite: 0.965, alpha: 0.97)) -> NSImage {
         view.layoutSubtreeIfNeeded()
         let size = view.bounds.size
         let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(size.width * 2), pixelsHigh: Int(size.height * 2),
@@ -133,7 +133,7 @@ enum ScreenshotMode {
         NSGraphicsContext.saveGraphicsState()
         NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
         let shape = NSBezierPath(roundedRect: NSRect(origin: .zero, size: size), xRadius: 12, yRadius: 12)
-        NSColor(calibratedWhite: 0.965, alpha: 0.97).setFill()
+        backdrop.setFill()
         shape.fill()
         NSGraphicsContext.restoreGraphicsState()
         view.cacheDisplay(in: view.bounds, to: rep)
